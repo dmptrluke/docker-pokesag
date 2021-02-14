@@ -7,15 +7,12 @@ body {
 
 table {
     background-color: #404040;
+    border-collapse: separate;
     border-radius: 8px;
     margin-left: auto;
     margin-right: auto;
     margin-bottom: 32px;
     width: 100%;
-}
-
-tr, th, td {
-    padding: 4px;
 }
 
 tbody tr:nth-child(odd) {
