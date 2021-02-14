@@ -3,9 +3,10 @@
 ------------------
 --  Environment --
 ------------------
-local username = os.getenv("DB_USER")
-local password = os.getenv("DB_PASSWORD")
-local path = os.getenv("DB_PATH")
+local DB_HOST = os.getenv("DB_HOST")
+local DB_USER = os.getenv("DB_USER")
+local DB_PASSWORD = os.getenv("DB_PASSWORD")
+local DB_NAME = os.getenv("DB_NAME")
 
 ----------------
 --  Database  --
@@ -22,7 +23,7 @@ local postgres = require ('pgsql')
 -- Create the table if it doesn't already exist
 function create_database ()
     local db = postgres.connectdb (
-        'postgresql://' .. username .. ':' .. password .. '@' .. path)
+        'postgresql://' .. DB_USER .. ':' .. DB_PASSWORD .. '@' .. DB_HOST .. '/' .. DB_NAME)
 
     if db:status() == postgres.CONNECTION_OK then
         print ('Connected to database.')
@@ -57,7 +58,7 @@ end
 -- Use a prepared statement to store a page in the database
 function store_page (date, source, address, content)
     local db = postgres.connectdb (
-        'postgresql://' .. username .. ':' .. password .. '@' .. path)
+        'postgresql://' .. DB_USER .. ':' .. DB_PASSWORD .. '@' .. DB_HOST .. '/' .. DB_NAME)
 
     local rc = db:prepare ('add-page',
         [[

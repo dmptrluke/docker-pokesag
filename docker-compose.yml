@@ -8,6 +8,13 @@ services:
       POSTGRES_USER: pokesag
       POSTGRES_PASSWORD: pokesag
 
+  web: 
+    image: dmptrluke/pokesag-web:latest
+    build:
+      context: ./web
+    ports:
+      - "8000:8000"
+
   server:
     image: dmptrluke/pokesag-server:latest
     build:

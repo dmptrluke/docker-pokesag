@@ -1,0 +1,96 @@
+body {
+    color: white;
+    background-color: #282020;
+    text-align: center;
+    overflow: scroll;
+    font-family: sans-serif;
+}
+
+hr {
+    border: 0;
+    border-top: 2px solid #808080;
+    width: 85%;
+}
+
+table {
+    background-color: #404040;
+    border-radius: 8px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 32px;
+    width: 100%;
+}
+
+tr, th, td {
+    padding: 4px;
+}
+
+tbody tr:nth-child(odd) {
+    background-color: #505050;
+}
+
+tbody tr:nth-child(even) {
+    background-color: #585858;
+}
+
+.app_container {
+    margin-left: auto;
+    margin-right: auto;
+    width: 85%;
+}
+
+.page_content {
+    text-align: left;
+    padding-left: 8px;
+}
+
+.toolbar {
+    background-color: #404040;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    width: 100%;
+    text-align: left;
+}
+
+.hamburger_button {
+    margin-left: 8px;
+    padding-right: 24px;
+    border-left: none;
+}
+
+.search_box {
+    border-right: 2px solid #606060;
+}
+
+.refresh_button {
+    float: right;
+    padding-left: 24px;
+    margin-right: 8px;
+    border-left: 2px solid #606060;
+    border-right: none;
+}
+
+.refresh_button:hover {
+    color: #ffc080;
+}
+
+.refresh_button:active {
+    color: #e0a060;
+}
+
+input {
+    color: #c0c0c0;
+    background-color: #404040;
+    border-top: none;
+    border-bottom: none;
+    border-left: 1px solid #606060;
+    border-right: 1px solid #606060;
+    padding: 16px;
+}
+
+/* TODO: The outline looked bad. What can we use
+ *       instead for tabbing through the interface? */
+input:focus {
+    outline: none !important;
+}

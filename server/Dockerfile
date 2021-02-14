@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install wait-for
-COPY ./wait-for /bin
+COPY wait-for /bin
 RUN chmod +x /bin/wait-for
 
 # Install LuaSQL
@@ -42,12 +42,13 @@ RUN git clone https://github.com/vsergeev/luaradio.git \
     && cd luaradio/embed \
     && make install-lmod
 
+# Copy server code
 WORKDIR /code
 COPY . ./
 
-ENV DB_USER pokesag
-ENV DB_PASSWORD pokesag
-
-ENV DB_PATH db/pokesag
+ENV DB_HOST=db
+ENV DB_NAME=pokesag
+ENV DB_USER=pokesag
+ENV DB_PASSWORD=pokesag
 
 CMD ["wait-for", "db:5432" "/code/server.lua"]
