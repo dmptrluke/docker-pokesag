@@ -51,4 +51,4 @@ ENV DB_NAME=pokesag
 ENV DB_USER=pokesag
 ENV DB_PASSWORD=pokesag
 
-CMD ["wait-for", "db:5432" "/code/server.lua"]
+CMD ["wait-for", "db:5432", "--" "/code/server.lua"]
