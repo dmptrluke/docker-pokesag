@@ -1,0 +1,17 @@
+---
+version: "3.8"
+
+services:
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: pokesag
+      POSTGRES_PASSWORD: pokesag
+
+  server:
+    image: dmptrluke/pokesag-server:latest
+    build:
+      context: ./Server
+    environment:
+      TZ: Pacific/Auckland
+    
