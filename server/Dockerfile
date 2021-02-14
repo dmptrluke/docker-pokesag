@@ -13,9 +13,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libfftw3-dev \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Install wait-for
-COPY wait-for /bin
-RUN chmod +x /bin/wait-for
 
 # Install LuaSQL
 WORKDIR /tmp
@@ -51,4 +48,4 @@ ENV DB_NAME=pokesag
 ENV DB_USER=pokesag
 ENV DB_PASSWORD=pokesag
 
-CMD ["/bin/wait-for", "db:5432", "--", "luajit", "/code/server.lua"]
+CMD ["/code/wait-for", "db:5432", "--", "luajit", "/code/server.lua"]

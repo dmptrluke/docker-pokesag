@@ -33,6 +33,8 @@ function create_database ()
         return false
     end
 
+
+    print ('Attempting to create table...')
     local rc = db:exec [[
         create table pages (
             rx_date     timestamp   not null,
@@ -42,9 +44,9 @@ function create_database ()
     ]]
 
     if rc:status() == postgres.PGRES_COMMAND_OK then
-        print ('Table created.')
+        print ('...table created.')
     elseif string.match(rc:errorMessage (), 'already exists') then
-        print ('Table detected.')
+        print ('...table already exists.')
     else
         print ('Error creating table.')
         print (rc:errorMessage ())
@@ -160,6 +162,7 @@ PokeSAG:connect (source, hospital_tuner, hospital_decoder, hospital_sink)
 if create_database () then
     print ('Starting PokeSAG.')
     PokeSAG:run ()
+    print ('PokeSAG Stopped.')
 else
     print ('Unable to access database.')
 end

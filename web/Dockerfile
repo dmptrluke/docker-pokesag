@@ -15,4 +15,4 @@ ENV DB_NAME=pokesag
 ENV DB_USER=pokesag
 ENV DB_PASSWORD=pokesag
 
-CMD [ "node", "app.js" ]
+CMD ["/code/wait-for", "db:5432", "--", "node", "/code/app.js"]
