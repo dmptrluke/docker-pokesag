@@ -13,7 +13,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libfftw3-dev \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-
 # Install LuaSQL
 WORKDIR /tmp
 RUN luarocks install luapgsql PQ_INCDIR=/usr/include/postgresql
