@@ -14,4 +14,7 @@ services:
       context: ./server
     environment:
       TZ: Pacific/Auckland
-    
+    devices:
+      - /dev/swradio0:/dev/swradio0
+      - /dev/bus/usb:/dev/bus/usb
+    privileged: true
