@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     pkg-config \
     wget \
+    netcat \
     libliquid-dev \
     libvolk1-dev \
     libfftw3-dev \
@@ -51,4 +52,4 @@ ENV DB_NAME=pokesag
 ENV DB_USER=pokesag
 ENV DB_PASSWORD=pokesag
 
-CMD ["wait-for", "db:5432", "--" "/code/server.lua"]
+CMD ["/bin/wait-for", "db:5432", "--", "luajit", "/code/server.lua"]
