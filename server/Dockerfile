@@ -26,7 +26,7 @@ RUN luarocks install luapgsql PQ_INCDIR=/usr/include/postgresql
 
 # Install RTL-SDR
 WORKDIR /tmp
-RUN git clone git://git.osmocom.org/rtl-sdr.git \
+RUN git clone --depth 1 git://git.osmocom.org/rtl-sdr.git \
     && cd rtl-sdr \
     && mkdir build
 
@@ -39,7 +39,7 @@ RUN cmake ../ -DINSTALL_UDEV_RULES=ON -DDETACH_KERNEL_DRIVER=ON \
 
 # Install LuaRadio
 WORKDIR /tmp
-RUN git clone https://github.com/vsergeev/luaradio.git \
+RUN git clone --depth 1 https://github.com/vsergeev/luaradio.git \
     && cd luaradio/embed \
     && make install-lmod
 
