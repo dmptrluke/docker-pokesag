@@ -11,7 +11,7 @@ services:
   server:
     image: dmptrluke/pokesag-server:latest
     build:
-      context: ./Server
+      context: ./server
     environment:
       TZ: Pacific/Auckland
     
