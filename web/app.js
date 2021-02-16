@@ -50,7 +50,7 @@ app.use (express.static ('Client', { 'index': ['main.html'] } ));
 
 /* API to retrieve the 100 most recent pages */
 app.get ('/Pages/', function onListenEvent (req, res) {
-    db.query ('select * from pages order by rx_date desc limit 100', (query_err, query_res) => {
+    db.query ('SELECT * FROM pages ORDER BY rx_date DESC LIMIT 100', (query_err, query_res) => {
         if (query_err) {
             throw query_err;
         }
@@ -61,7 +61,7 @@ app.get ('/Pages/', function onListenEvent (req, res) {
 
 /* API to retrieve all pages matching a string */
 app.get ('/Pages/Search/:string/', function onListenEvent (req, res) {
-    db.query ("select * from pages where content ilike $1 order by rx_date desc", ['%' + req.params.string + '%'], (query_err, query_res) => {
+    db.query ("SELECT * from pages WHERE tsx @@ to_tsquery($1) ORDER BY rx_date DESC LIMIT 100", ['%' + req.params.string + '%'], (query_err, query_res) => {
         if (query_err) {
             throw query_err;
         }
