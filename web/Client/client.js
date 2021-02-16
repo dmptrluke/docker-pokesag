@@ -9,13 +9,13 @@ class PokeSAG_Client extends React.Component
         this.state = {
             pages_database: [],
             search_string: "",
-            search_type: "match",
+            search_type: "ft",
             auto_refresh: false,
             auto_refresh_timer: null,
             hamburger_class: "hamburger_button",
             settings_class: "settings hidden",
             auto_refresh_class: "setting red",
-            fulltext_search_class: "setting red"
+            fulltext_search_class: "setting green"
         };
 
         this.refresh_data = this.refresh_data.bind (this);
