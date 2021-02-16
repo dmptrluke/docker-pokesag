@@ -85,8 +85,8 @@ function create_database ()
     return true
 end
 
-function is_spam (text)
-    text_lower = text.lower()
+function is_spam (content)
+    text_lower = string.lower(content)
     if string.find(text_lower, "ha/modica/spark") or string.find(text_lower, "this is a test periodic") then
         return true
     else
