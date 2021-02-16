@@ -9,13 +9,14 @@ class PokeSAG_Client extends React.Component
         this.state = {
             pages_database: [],
             search_string: "",
-            search_type: "ft",
+            
             auto_refresh: false,
             auto_refresh_timer: null,
             hamburger_class: "hamburger_button",
             settings_class: "settings hidden",
             auto_refresh_class: "setting red",
-            fulltext_search_class: "setting green"
+            search_type: "ft",
+            search_type_class: "setting green",
         };
 
         this.refresh_data = this.refresh_data.bind (this);
@@ -23,7 +24,7 @@ class PokeSAG_Client extends React.Component
         this.perform_search = this.perform_search.bind (this);
         this.toggle_settings = this.toggle_settings.bind (this);
         this.toggle_auto_refresh = this.toggle_auto_refresh.bind (this);
-        this.toggle_fulltext_search = this.toggle_fulltext_search.bind (this);
+        this.toggle_search_type = this.toggle_search_type.bind (this);
     }
 
 
@@ -78,18 +79,18 @@ class PokeSAG_Client extends React.Component
         }
     }
 
-    toggle_fulltext_search ()
+    toggle_search_type ()
     {
         if (this.state.search_type == 'ft')
         {
-            this.state.search_type = 'match';
-            this.setState({fulltext_search_class: "setting red"});
+            this.state.search_type = 'basic';
+            this.setState({search_type_class: "setting red"});
             
         }
         else
         {
             this.state.search_type = 'ft';
-            this.setState({fulltext_search_class: "setting green"});
+            this.setState({search_type_class: "setting green"});
             
         }
     }
@@ -135,7 +136,7 @@ class PokeSAG_Client extends React.Component
                 <div className={this.state.settings_class}>
                     <h4> Settings </h4>
                     <input className={this.state.auto_refresh_class} type="button" value="Auto Refresh" onClick={this.toggle_auto_refresh}  />
-                    <input className={this.state.fulltext_search_class} type="button" value="Fulltext Search" onClick={this.toggle_fulltext_search}  />
+                    <input className={this.state.search_type_class} type="button" value="Full Text Search" onClick={this.toggle_search_type}  />
                 </div>
 
                 <div className="page_table">
