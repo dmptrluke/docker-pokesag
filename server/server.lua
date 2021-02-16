@@ -54,10 +54,6 @@ function create_database ()
     print ('Attempting to create search index column...')
     local rc = db:exec [[
         ALTER TABLE pages
-        DROP COLUMN IF EXISTS tsx;
-    ]]
-    local rc = db:exec [[
-        ALTER TABLE pages
         ADD COLUMN IF NOT EXISTS tsx tsvector
         GENERATED ALWAYS AS (to_tsvector('simple', content)) STORED;
     ]]
@@ -71,9 +67,6 @@ function create_database ()
     end
 
     print ('Attempting to create search index...')
-    local rc = db:exec [[
-        DROP INDEX IF EXISTS search_idx;
-    ]]
     local rc = db:exec [[
         CREATE INDEX IF NOT EXISTS search_idx ON pages USING GIN (tsx);
     ]]
