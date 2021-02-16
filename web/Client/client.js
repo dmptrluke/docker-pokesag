@@ -27,7 +27,7 @@ class PokeSAG_Client extends React.Component
     update_search_string (e)
     {
         /* Remove characters that don't “just work” */
-        let filtered_string = e.target.value.replace (/[#%.?\/\\]/g, '');
+        let filtered_string = e.target.value;
         this.setState ( { search_string: filtered_string } );
     }
 
