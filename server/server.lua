@@ -88,10 +88,10 @@ end
 function is_spam (content)
     text_lower = string.lower(content)
     if string.len(text_lower) < 4 then
-        -- Discard very short messages
+        -- very short messages
         return true
     elseif string.find(text_lower, "ha/modica") or string.find(text_lower, "this is a test periodic") then
-        -- Discard test messages
+        -- test messages
         return true
     else
         return false
@@ -164,13 +164,13 @@ function DBSink:process (x)
         -- First, check for an alphanumeric page
         if x.data[i].alphanumeric ~= nil then
             local content = clean_string (x.data[i].alphanumeric)
-            -- print ('[' .. date .. '] ' .. self.name .. ': ' .. content)
+            print ('[' .. date .. '] ' .. self.name .. ': ' .. content)
             store_page (date, self.name, tostring(x.data[i].address), content)
 
         -- Failing that, fall back to a numeric page
         elseif x.data[i].numeric ~= nil then
             local content = clean_string (x.data[i].numeric)
-            -- print ('[' .. date .. '] ' .. self.name .. ': ' .. content)
+            print ('[' .. date .. '] ' .. self.name .. ': ' .. content)
             store_page (date, self.name, tostring(x.data[i].address), content)
 
         end
