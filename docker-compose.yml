@@ -20,7 +20,8 @@ services:
     build:
       context: ./server
     environment:
-      TZ: Pacific/Auckland
+      TZ: 'Pacific/Auckland'
+      DISCARD_SPAM: 'true'
     devices:
       - /dev/swradio0:/dev/swradio0
       - /dev/bus/usb:/dev/bus/usb

@@ -47,4 +47,6 @@ ENV DB_NAME=pokesag
 ENV DB_USER=pokesag
 ENV DB_PASSWORD=pokesag
 
+ENV DISCARD_SPAM=false
+
 CMD ["/code/wait-for", "db:5432", "--", "luajit", "/code/server.lua"]

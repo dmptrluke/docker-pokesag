@@ -8,6 +8,8 @@ local DB_USER = os.getenv("DB_USER")
 local DB_PASSWORD = os.getenv("DB_PASSWORD")
 local DB_NAME = os.getenv("DB_NAME")
 
+local DISCARD_SPAM = os.getenv("DISCARD_SPAM")
+
 ----------------
 --  Database  --
 ----------------
@@ -83,8 +85,21 @@ function create_database ()
     return true
 end
 
+function is_spam (text)
+    text_lower = text.lower()
+    if string.find(text_lower, "ha/modica/spark") or string.find(text_lower, "this is a test periodic") then
+        return true
+    else
+        return false
+    end
+end
+
 -- Use a prepared statement to store a page in the database
 function store_page (date, source, address, content)
+    if (DISCARD_SPAM == 'true') and is_spam(content) then
+        return
+    end
+
     local db = postgres.connectdb (
         'postgresql://' .. DB_USER .. ':' .. DB_PASSWORD .. '@' .. DB_HOST .. '/' .. DB_NAME)
 
