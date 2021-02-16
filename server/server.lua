@@ -87,7 +87,11 @@ end
 
 function is_spam (content)
     text_lower = string.lower(content)
-    if string.find(text_lower, "ha/modica/spark") or string.find(text_lower, "this is a test periodic") then
+    if string.len(text_lower) < 4 then
+        -- Discard very short messages
+        return true
+    else if string.find(text_lower, "ha/modica") or string.find(text_lower, "this is a test periodic") then
+        -- Discard test messages
         return true
     else
         return false
