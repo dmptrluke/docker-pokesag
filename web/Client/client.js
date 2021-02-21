@@ -120,10 +120,15 @@ class PokeSAG_Client extends React.Component
 
     componentDidMount ()
     {
-        this.setState({ 
-            search_type: localStorage.getItem('search_type') ||  'ft',
-            auto_refresh: localStorage.getItem('auto_refresh') === 'true' ||  false
-        });
+        let search_type =  localStorage.getItem('search_type') ||  'ft';
+        let auto_refresh = localStorage.getItem('auto_refresh') === 'true' ||  false;
+        this.setState({ search_type, auto_refresh });
+        
+        if (auto_refresh) {
+            this.setState({
+                auto_refresh_timer: setInterval( () => this.refresh_data(null), 15000),
+            });
+        }
         this.refresh_data (null);
     }
 
