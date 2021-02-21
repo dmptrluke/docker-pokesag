@@ -11,25 +11,17 @@ class PokeSAG_Client extends React.Component
             pages_database: [],
             search_string: "",
             
-            auto_refresh: false,
-            auto_refresh_timer: null,
             hamburger_class: "hamburger_button",
             settings_class: "settings hidden",
-            auto_refresh_class: "setting red",
-            search_type: "ft",
-            search_type_class: "setting green",
-        };
 
-        this.refresh_data = this.refresh_data.bind (this);
-        this.update_search_string = this.update_search_string.bind (this);
-        this.handle_search = this.handle_search.bind (this);
-        this.toggle_settings = this.toggle_settings.bind (this);
-        this.toggle_auto_refresh = this.toggle_auto_refresh.bind (this);
-        this.toggle_search_type = this.toggle_search_type.bind (this);
+            search_type: "ft",
+            auto_refresh: false,
+            auto_refresh_timer: null,
+        };
     }
 
 
-    update_search_string (e)
+    update_search_string = () =>
     {
         this.setState ( { search_string: e.target.value } );
 
@@ -40,7 +32,7 @@ class PokeSAG_Client extends React.Component
         }
     }
 
-    handle_search (e)
+    handle_search = () =>
     {
         if (e.key === 'Enter' && this.state.search_string != '')
         {
@@ -49,7 +41,7 @@ class PokeSAG_Client extends React.Component
         }
     }
 
-    refresh_data (e)
+    refresh_data = () =>
     {
         switch (this.state.mode)
         {
@@ -75,13 +67,8 @@ class PokeSAG_Client extends React.Component
         }
     }
 
-    componentDidMount ()
-    {
-        this.refresh_data (null);
-    }
-
     /* Toggle whether the settings are visible or not */
-    toggle_settings ()
+    toggle_settings = () => 
     {
         if (this.state.settings_class == "settings hidden")
         {
@@ -95,37 +82,49 @@ class PokeSAG_Client extends React.Component
         }
     }
 
-    toggle_search_type ()
+    toggle_search_type = () =>
     {
         if (this.state.search_type == 'ft')
         {
-            this.state.search_type = 'basic';
-            this.setState({search_type_class: "setting red"});
-            
+            this.setState({search_type: 'basic'})
+            localStorage.setItem('search_type', 'basic');
         }
         else
         {
-            this.state.search_type = 'ft';
-            this.setState({search_type_class: "setting green"});
-            
+            this.setState({search_type: 'ft'})
+            localStorage.setItem('search_type', 'ft');
         }
+        
     }
 
-    toggle_auto_refresh ()
+    toggle_auto_refresh = () =>
     {
         if (this.state.auto_refresh == false)
         {
-            this.state.auto_refresh = true;
-            this.state.auto_refresh_timer = setInterval( () => this.refresh_data(null), 15000);
-            this.setState({auto_refresh_class: "setting green"});
+            this.setState({
+                auto_refresh_timer: setInterval( () => this.refresh_data(null), 15000),
+                auto_refresh: true
+            });
+            localStorage.setItem('auto_refresh', 'true');
         }
         else
         {
-            this.state.auto_refresh = false;
             clearInterval(this.state.auto_refresh_timer);
-            this.state.auto_refresh_timer = null;
-            this.setState({auto_refresh_class: "setting red"});
+            this.setState({
+                auto_refresh_timer: null,
+                auto_refresh: false
+            });
+            localStorage.setItem('auto_refresh', 'false');
         }
+    }
+
+    componentDidMount ()
+    {
+        this.setState({ 
+            search_type: localStorage.getItem('search_type') ||  'ft',
+            auto_refresh: localStorage.getItem('auto_refresh') === 'true' ||  false
+        });
+        this.refresh_data (null);
     }
 
     render ()
@@ -151,8 +150,16 @@ class PokeSAG_Client extends React.Component
 
                 <div className={this.state.settings_class}>
                     <h4> Settings </h4>
-                    <input className={this.state.auto_refresh_class} type="button" value="Auto Refresh" onClick={this.toggle_auto_refresh}  />
-                    <input className={this.state.search_type_class} type="button" value="Full Text Search" onClick={this.toggle_search_type}  />
+                    <input       
+                        className={
+                            this.state.auto_refresh ? 'setting green' : 'setting red'
+                        }
+                        type="button" value="Auto Refresh" onClick={this.toggle_auto_refresh}  />
+                    <input 
+                        className={
+                            this.state.search_type == 'ft' ? 'setting green' : 'setting red'
+                        }
+                        type="button" value="Full Text Search" onClick={this.toggle_search_type}  />
                 </div>
 
                 <div className="page_table">
