@@ -35,7 +35,7 @@ volumes:
   pokesag_db:
 ```
 
-You can also choose to use an external database by omitting the `db` container and using the `DB_HOST`/`DB_NAME`/`DB_USER`/`DB_PASSWORD` environment variables on the `web` and `server` containers.
+You can also choose to use an external database by omitting the `db` container and using the `DB_HOST`/`DB_NAME`/`DB_USER`/`DB_PASS` environment variables on the `web` and `server` containers.
 
 ## License
 

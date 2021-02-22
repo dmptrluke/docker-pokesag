@@ -3,10 +3,19 @@
 ------------------
 --  Environment --
 ------------------
-local DB_HOST = os.getenv("DB_HOST")
-local DB_USER = os.getenv("DB_USER")
-local DB_PASSWORD = os.getenv("DB_PASSWORD")
-local DB_NAME = os.getenv("DB_NAME")
+func get_env_with_default(key, fallback) {
+    value, exists := os.LookupEnv(key)
+    if !exists {
+        value = fallback
+    }
+    return value
+}
+
+local DB_HOST = os.getenv('DB_HOST')
+local DB_NAME = get_env_with_default('DB_NAME', 'pokesag')
+local DB_USER = os.getenv('DB_USER')
+local DB_PASS = os.getenv('DB_PASS')
+local DB_PORT = get_env_with_default('DB_PORT', '5432')
 
 local DISCARD_SPAM = os.getenv("DISCARD_SPAM")
 
@@ -25,7 +34,7 @@ local postgres = require ('pgsql')
 -- Create the table if it doesn't already exist
 function create_database ()
     local db = postgres.connectdb (
-        'postgresql://' .. DB_USER .. ':' .. DB_PASSWORD .. '@' .. DB_HOST .. '/' .. DB_NAME)
+        'postgresql://' .. DB_USER .. ':' .. DB_PASS .. '@' .. DB_HOST .. ':' .. DB_PORT .. '/' .. DB_NAME)
 
     if db:status() == postgres.CONNECTION_OK then
         print ('Connected to database.')

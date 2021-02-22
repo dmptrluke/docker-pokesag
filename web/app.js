@@ -4,10 +4,10 @@
 const express = require ('express');
 const postgres = require ('pg').Client;
 
-const DB_USER = process.env.DB_USER;
-const DB_PASSWORD = process.env.DB_PASSWORD;
-const DB_NAME = process.env.DB_NAME;
 const DB_HOST = process.env.DB_HOST;
+const DB_NAME = process.env.DB_NAME || 'pokesag';
+const DB_USER = process.env.DB_USER;
+const DB_PASS = process.env.DB_PASS;
 const DB_PORT = process.env.DB_PORT || 5432;
 
 /*********************
@@ -31,7 +31,7 @@ function clean_rows (rows)
 let db = new postgres (
     {
         user: DB_USER,
-        password: DB_PASSWORD,
+        password: DB_PASS,
         host: DB_HOST,
         database: DB_NAME,
         port: DB_PORT,

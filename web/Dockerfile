@@ -13,6 +13,6 @@ EXPOSE 8000
 ENV DB_HOST=db
 ENV DB_NAME=pokesag
 ENV DB_USER=pokesag
-ENV DB_PASSWORD=pokesag
+ENV DB_PASS=pokesag
 
 CMD ["/code/wait-for", "db:5432", "--", "node", "/code/app.js"]
