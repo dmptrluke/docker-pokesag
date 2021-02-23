@@ -164,7 +164,7 @@ class SettingButton extends React.Component {
     }
 
     handle_click = () => {
-        let new_state = !this.state.is_active,
+        let new_state = !this.state.is_active;
         this.props.action(new_state);
         this.setState({is_active: new_state});
         localStorage.setItem(this.props.value, new_state);
