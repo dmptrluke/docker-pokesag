@@ -155,15 +155,9 @@ class PokeSAG_Client extends React.Component
 
                 <div className={this.state.settings_class}>
                     <h4> Settings </h4>
-                    <input       
-                        className={
-                            this.state.auto_refresh ? 'setting green' : 'setting red'
-                        }
+                    <input className={this.state.auto_refresh ? 'setting green' : 'setting red'}
                         type="button" value="Auto Refresh" onClick={this.toggle_auto_refresh}  />
-                    <input 
-                        className={
-                            this.state.search_type == 'ft' ? 'setting green' : 'setting red'
-                        }
+                    <input className={this.state.search_type == 'ft' ? 'setting green' : 'setting red'}
                         type="button" value="Full Text Search" onClick={this.toggle_search_type}  />
                 </div>
 
