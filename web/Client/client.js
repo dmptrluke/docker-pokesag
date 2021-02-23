@@ -164,6 +164,7 @@ class SettingButton extends React.Component {
     }
 
     handle_click = () => {
+        /* we use a callback here, since setState is asynchronous */
         this.setState({is_active: !this.state.is_active}, () => {
             this.props.action(this.state.is_active);   
             localStorage.setItem(this.props.value, this.state.is_active);
