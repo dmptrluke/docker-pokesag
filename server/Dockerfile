@@ -45,7 +45,7 @@ COPY . ./
 ENV DB_HOST=db
 ENV DB_NAME=pokesag
 ENV DB_USER=pokesag
-ENV DB_PASSWORD=pokesag
+ENV DB_PASS=pokesag
 ENV DB_PORT=5432
 
 ENV DISCARD_SPAM=false
