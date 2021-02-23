@@ -102,7 +102,7 @@ class PokeSAG_Client extends React.Component
         if (this.state.auto_refresh == false)
         {
             this.setState({
-                auto_refresh_timer: setInterval( () => this.refresh_data(null), 15000),
+                auto_refresh_timer: setInterval( () => this.refresh_data(null), 10000),
                 auto_refresh: true
             });
             localStorage.setItem('auto_refresh', 'true');
