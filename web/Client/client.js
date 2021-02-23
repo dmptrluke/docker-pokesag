@@ -157,9 +157,13 @@ class SettingButton extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            is_active: localStorage.getItem(props.value) ||  props.default_state
+            is_active: localStorage.getItem(props.value)
         };
 
+        if (this.state.is_active === null) {
+            this.state.is_active = default_state;
+        }
+        
         this.props.action(this.state.is_active);
     }
 
