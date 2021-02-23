@@ -156,22 +156,19 @@ class PokeSAG_Client extends React.Component
 class SettingButton extends React.Component {
     constructor(props) {
         super(props);
-        this.state = {
-            is_active: localStorage.getItem(props.value)
-        };
-
-        if (this.state.is_active === null) {
-            this.state.is_active = default_state;
+        let is_active = localStorage.getItem(props.value);
+        if (is_active === null) {
+            is_active = default_state;
         }
-        
-        this.props.action(this.state.is_active);
+        this.props.action(is_active);
+        this.state = {is_active: is_active};
     }
 
     handle_click = () => {
-        let new_state = !this.state.is_active;
-        this.props.action(new_state);
-        this.setState({is_active: new_state});
-        localStorage.setItem(this.props.value, new_state);
+        this.setState({is_active: !this.state.is_active}, () => {
+            this.props.action(this.state.is_active);   
+            localStorage.setItem(this.props.value, this.state.is_active);
+        });
     }
 
     render() {
