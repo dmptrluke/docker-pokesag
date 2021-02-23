@@ -14,12 +14,11 @@ class PokeSAG_Client extends React.Component
             hamburger_class: "hamburger_button",
             settings_class: "settings hidden",
 
-            search_type: "ft",
+            full_text_search: false,
             auto_refresh: false,
             auto_refresh_timer: null,
         };
     }
-
 
     update_search_string = (e) =>
     {
@@ -46,7 +45,8 @@ class PokeSAG_Client extends React.Component
         switch (this.state.mode)
         {
             case 'search':
-                fetch ('/Pages/Search/' + this.state.search_type + '/' + encodeURIComponent(this.state.search_string) + '/')
+                let search_type = this.state.full_text_search ? 'ft' : 'basic';
+                fetch ('/Pages/Search/' + search_type + '/' + encodeURIComponent(this.state.search_string) + '/')
                     .then ( result => {
                         result.json()
                             .then ( json => {
@@ -82,53 +82,30 @@ class PokeSAG_Client extends React.Component
         }
     }
 
-    toggle_search_type = () =>
+    handle_search_toggle = (is_active) =>
     {
-        if (this.state.search_type == 'ft')
-        {
-            this.setState({search_type: 'basic'})
-            localStorage.setItem('search_type', 'basic');
-        }
-        else
-        {
-            this.setState({search_type: 'ft'})
-            localStorage.setItem('search_type', 'ft');
-        }
-        
+        this.setState({full_text_search: is_active})
     }
 
-    toggle_auto_refresh = () =>
+    handle_refresh_toggle = (is_active) =>
     {
-        if (this.state.auto_refresh == false)
+        if (is_active)
         {
             this.setState({
-                auto_refresh_timer: setInterval( () => this.refresh_data(null), 10000),
+                auto_refresh_timer: setInterval(() => this.refresh_data(null), 10000),
                 auto_refresh: true
             });
-            localStorage.setItem('auto_refresh', 'true');
-        }
-        else
-        {
+        } else {
             clearInterval(this.state.auto_refresh_timer);
             this.setState({
                 auto_refresh_timer: null,
                 auto_refresh: false
             });
-            localStorage.setItem('auto_refresh', 'false');
         }
     }
 
     componentDidMount ()
     {
-        let search_type =  localStorage.getItem('search_type') ||  'ft';
-        let auto_refresh = localStorage.getItem('auto_refresh') === 'true' ||  false;
-        this.setState({ search_type, auto_refresh });
-        
-        if (auto_refresh) {
-            this.setState({
-                auto_refresh_timer: setInterval( () => this.refresh_data(null), 15000),
-            });
-        }
         this.refresh_data (null);
     }
 
@@ -154,11 +131,9 @@ class PokeSAG_Client extends React.Component
                 </div>
 
                 <div className={this.state.settings_class}>
-                    <h4> Settings </h4>
-                    <input className={this.state.auto_refresh ? 'setting green' : 'setting red'}
-                        type="button" value="Auto Refresh" onClick={this.toggle_auto_refresh}  />
-                    <input className={this.state.search_type == 'ft' ? 'setting green' : 'setting red'}
-                        type="button" value="Full Text Search" onClick={this.toggle_search_type}  />
+                    <h4>Settings</h4>
+                    <SettingButton value="Auto Refresh" default_state={false} action={this.handle_refresh_toggle} />
+                    <SettingButton value="Full Text Search" default_state={true} action={this.handle_search_toggle} />
                 </div>
 
                 <div className="page_table">
@@ -175,5 +150,29 @@ class PokeSAG_Client extends React.Component
                     </table>
                 </div>
             </div>
+    }
+}
+
+class SettingButton extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            is_active: localStorage.getItem(props.value) ||  props.default_state
+        };
+
+        this.props.action(this.state.is_active);
+    }
+
+    handle_click = () => {
+        this.setState({is_active: !this.state.is_active});
+        localStorage.setItem(this.props.value, this.state.is_active);
+        this.props.action(this.state.is_active);
+    }
+
+    render() {
+        return (
+            <input className={this.state.is_active ? 'setting green' : 'setting red'}
+            type="button" value={this.props.value} onClick={this.handle_click}  />
+        )
     }
 }
