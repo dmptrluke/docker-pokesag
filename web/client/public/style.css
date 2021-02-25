@@ -50,6 +50,11 @@ header h1 {
     padding-left: 8px;
 }
 
+@media all and (max-width:768px) {
+    .page_table tr {    display: table;  width:100%;    }               
+    .page_table td {    display: table-row; }           
+}
+
 /* Toolbar */
 .toolbar {
     background-color: #404040;
