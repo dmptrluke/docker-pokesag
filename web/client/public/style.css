@@ -65,24 +65,36 @@ header h1 {
 /* Toolbar */
 .toolbar {
     background-color: #404040;
-    margin-top: 8px;
-    margin-bottom: 8px;
+    margin: 8px 0;
     border-radius: 8px;
     overflow: hidden;
-    width: 100%;
-    text-align: left;
+    display: flex;
+}
+
+.toolbar > *:last-child {
+    border-right: 0;
+}
+
+.toolbar .spacer {
+    flex-grow: 1;
+    border-right: 2px solid #606060;
+}
+
+@media all and (max-width:768px) {
+    /* On small devices, hide the spacer, and grow the search box instead */
+    .toolbar .spacer {
+        display: none;
+    }
+
+    .toolbar .search_box {
+        flex-grow: 1;
+    }
 }
 
 .toolbar input {
     border-right: 2px solid #606060;
     padding-left: 24px;
     padding-right: 24px;
-}
-
-.toolbar .refresh_button {
-    border-left: 2px solid #606060;
-    border-right: none;
-    float: right;
 }
 
 .toolbar input[type=button]:hover {
