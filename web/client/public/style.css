@@ -19,6 +19,13 @@ input {
     width: 85%;
 }
 
+@media all and (max-width: 768px) {
+    /* On medium devices, reduce the page margins */
+    .app_container, header {
+        width: 90%;
+    }
+}
+
 header {
     border-bottom: 2px solid #808080;
 }
@@ -51,7 +58,8 @@ header h1 {
     overflow-wrap: anywhere;
 }
 
-@media all and (max-width:768px) {
+@media all and (max-width: 575px) {
+    /* On small devices, collapse the table */
     .page_table tr {    
         display: table;  
         width:100%;    
@@ -80,8 +88,8 @@ header h1 {
     border-right: 2px solid #606060;
 }
 
-@media all and (max-width:768px) {
-    /* On small devices, hide the spacer, and grow the search box instead */
+@media all and (max-width: 768px) {
+    /* On medium devices, hide the spacer, and grow the search box instead */
     .toolbar .spacer {
         display: none;
     }
