@@ -88,6 +88,7 @@ header h1 {
 
     .toolbar .search_box {
         flex-grow: 1;
+        min-width: 0;
     }
 }
 
