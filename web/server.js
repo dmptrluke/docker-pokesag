@@ -46,7 +46,10 @@ db.connect ();
 let app = express ();
 let port = process.env.PORT || 8000;
 
-app.use (express.static ('Client', { 'index': ['main.html'] } ));
+app.use (express.static ('./client/public', { 'index': ['index.html'] } ));
+app.use (express.static ('./client/dist'));
+
+
 
 /* API to retrieve the 100 most recent pages */
 app.get ('/Pages/', function onListenEvent (req, res) {
