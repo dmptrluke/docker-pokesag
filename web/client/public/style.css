@@ -48,11 +48,18 @@ header h1 {
 .page_content {
     text-align: left;
     padding-left: 8px;
+    overflow-wrap: anywhere;
 }
 
 @media all and (max-width:768px) {
-    .page_table tr {    display: table;  width:100%;    }               
-    .page_table td {    display: table-row; }           
+    .page_table tr {    
+        display: table;  
+        width:100%;    
+    }               
+    .page_table td {    
+        display: table-row; 
+        text-align: left;
+    }           
 }
 
 /* Toolbar */
