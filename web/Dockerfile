@@ -1,7 +1,8 @@
 FROM node:12-alpine
+ENV NODE_ENV=production
 
 WORKDIR /code
-COPY package*.json ./
+COPY ["package.json", "package-lock.json*", "./"]
 RUN npm install
 
 COPY . .
