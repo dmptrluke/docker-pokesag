@@ -57,8 +57,12 @@ function create_database ()
     print ('Attempting to create search index column...')
     local rc = db:exec [[
         ALTER TABLE pages
+        DROP COLUMN tsx;
+    ]]
+    local rc = db:exec [[
+        ALTER TABLE pages
         ADD COLUMN IF NOT EXISTS tsx tsvector
-        GENERATED ALWAYS AS (to_tsvector('simple', content)) STORED;
+        GENERATED ALWAYS AS (to_tsvector('simple', recipient || ' ' || content)) STORED;
     ]]
 
     if rc:status() == postgres.PGRES_COMMAND_OK then
@@ -70,6 +74,9 @@ function create_database ()
     end
 
     print ('Attempting to create search index...')
+    local rc = db:exec [[
+        DROP INDEX search_idx;
+    ]]
     local rc = db:exec [[
         CREATE INDEX IF NOT EXISTS search_idx ON pages USING GIN (tsx);
     ]]
