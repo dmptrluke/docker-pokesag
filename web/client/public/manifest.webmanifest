@@ -1,5 +1,5 @@
 {
-    "background_color": "grey",
+    "background_color": "#FF4C4C",
     "description": "A web interface for viewing SDR-captured POCSAG pages.",
     "display": "standalone",
     "icons": [
@@ -10,14 +10,8 @@
         "purpose": "any"
     },
     {
-        "src": "images/maskable_icon.png",
+        "src": "images/maskable_icon_x192.png",
         "sizes": "196x196",
-        "type": "image/png",
-        "purpose": "maskable" 
-    },
-    {
-        "src": "images/maskable_icon_x128.png",
-        "sizes": "128x128",
         "type": "image/png",
         "purpose": "maskable" 
     }
