@@ -75,7 +75,7 @@ app.get ('/Pages/Search/:type/:string/', function onListenEvent (req, res) {
         });
     } else {
         let search_string = decodeURIComponent(req.params.string).replace (/[#%.?\/\\]/g, '');
-        db.query ("SELECT * FROM pages WHERE content ILIKE $1 ORDER BY rx_date DESC LIMIT 100", ['%' + search_string + '%'], (query_err, query_res) => {
+        db.query ("SELECT * FROM pages WHERE content ILIKE $1 OR recipient=$2 ORDER BY rx_date DESC LIMIT 100", ['%' + search_string + '%', search_string], (query_err, query_res) => {
             if (query_err) {
                 throw query_err;
             }
