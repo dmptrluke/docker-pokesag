@@ -1,8 +1,9 @@
 /*
  * Joppy Furr, 2018
  */
-const express = require ('express');
-const postgres = require ('pg').Client;
+var express = require ('express');
+var compression = require('compression')
+var postgres = require ('pg').Client;
 
 const DB_HOST = process.env.DB_HOST;
 const DB_NAME = process.env.DB_NAME || 'pokesag';
@@ -45,6 +46,8 @@ db.connect ();
 
 let app = express ();
 let port = process.env.PORT || 8000;
+
+app.use(compression())
 
 app.use (express.static ('./client/public', { 'index': ['index.html'] } ));
 app.use (express.static ('./client/dist'));
