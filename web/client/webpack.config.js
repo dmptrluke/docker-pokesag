@@ -2,7 +2,10 @@ const path = require("path");
 const webpack = require("webpack");
 
 module.exports = {
-  entry: path.resolve(__dirname, './index.js'),
+  entry: {
+    index: [path.resolve(__dirname, './index.js')],
+    service: [path.resolve(__dirname, './service.js')]
+  },
   devtool: "source-map",
   module: {
     rules: [
@@ -20,6 +23,6 @@ module.exports = {
   resolve: { extensions: ["*", ".js", ".jsx"] },
   output: {
     path: path.resolve(__dirname, "./dist/"),
-    filename: "bundle.js"
+    filename: '[name].js'
   }
 };
