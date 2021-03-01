@@ -85,7 +85,7 @@ export default class PokeSAG_Client extends React.Component
 
     handle_search_toggle = (is_active) =>
     {
-        this.setState({full_text_search: is_active})
+        this.setState ({ full_text_search: is_active });
     }
 
     handle_refresh_toggle = (is_active) =>
@@ -105,6 +105,12 @@ export default class PokeSAG_Client extends React.Component
         }
     }
 
+    handle_recipient_click = (r) => {
+        this.setState({mode: "search", search_string: r}, () => {
+            this.refresh_data();
+        });
+    }
+
     componentDidMount ()
     {
         this.refresh_data (null);
@@ -117,7 +123,7 @@ export default class PokeSAG_Client extends React.Component
             return <tr>
                     <td className="page_rx_date">{page.rx_date}</td>
                     <td className="page_source">{page.source}</td>
-                    <td className="page_recipient">{page.recipient}</td>
+                    <td className="page_recipient"  onClick={() => this.handle_recipient_click (page.recipient)}>{page.recipient}</td>
                     <td className="page_content">{page.content}</td>
                 </tr>
         });
