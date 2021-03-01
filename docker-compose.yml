@@ -12,8 +12,10 @@ services:
     image: dmptrluke/pokesag-web:latest
     build:
       context: ./web
+      args:
+        BUILD_MODE: "development"
     ports:
-      - "8000:8000"
+      - "8400:8000"
 
   server:
     image: dmptrluke/pokesag-server:latest

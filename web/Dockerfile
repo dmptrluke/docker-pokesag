@@ -1,13 +1,15 @@
 FROM node:12-alpine
-ENV NODE_ENV=production
+
+ARG BUILD_MODE=production
+ENV NODE_ENV=$BUILD_MODE
 
 WORKDIR /code
 COPY ["package.json", "package-lock.json*", "./"]
-RUN npm install
+RUN npm ci
 
 COPY . .
 
-RUN npx webpack --config client/webpack.config.js
+RUN npm run-script build-${BUILD_MODE}
 
 EXPOSE 8000
 

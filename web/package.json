@@ -3,11 +3,12 @@
   "version": "1.0.0",
   "description": "WebApp component of PokéSAG",
   "main": "app.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "browserslist": "defaults",
   "author": "Joppy Furr",
+  "scripts": {
+    "build-development": "webpack --mode=development --config client/webpack.config.js",
+    "build-production": "webpack --mode=production --config client/webpack.config.js"
+},
   "license": "BSD-2-Clause",
   "dependencies": {
     "express": "^4.17.1",
