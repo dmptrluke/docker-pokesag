@@ -1,0 +1,15 @@
+{
+    "background_color": "grey",
+    "description": "A web interface for viewing SDR-captured POCSAG pages.",
+    "display": "standalone",
+    "icons": [
+    {
+        "src": "favicon.png",
+        "sizes": "128x128",
+        "type": "image/png"
+    }
+    ],
+    "name": "PokèSAG",
+    "short_name": "PokèSAG",
+    "start_url": "/"
+}
