@@ -4,9 +4,22 @@
     "display": "standalone",
     "icons": [
     {
-        "src": "favicon.png",
+        "src": "images/icon.png",
         "sizes": "128x128",
-        "type": "image/png"
+        "type": "image/png",
+        "purpose": "any"
+    },
+    {
+        "src": "images/maskable_icon.png",
+        "sizes": "196x196",
+        "type": "image/png",
+        "purpose": "maskable" 
+    },
+    {
+        "src": "images/maskable_icon_x128.png",
+        "sizes": "128x128",
+        "type": "image/png",
+        "purpose": "maskable" 
     }
     ],
     "name": "PokèSAG",
