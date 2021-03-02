@@ -2,16 +2,18 @@
   "name": "pokesag_webapp",
   "version": "1.0.0",
   "description": "WebApp component of PokéSAG",
+  "author": "Joppy Furr",
+  "license": "MIT",
   "main": "app.js",
   "browserslist": [
-    "defaults"
+    "defaults",
+    "not IE 11"
   ],
-  "author": "Joppy Furr",
   "scripts": {
     "build-development": "npx webpack --mode=development --config client/webpack.config.js",
-    "build-production": "npx webpack --mode=production --config client/webpack.config.js"
+    "build-production": "npx webpack --mode=production --config client/webpack.config.js",
+    "start": "node app.js"
   },
-  "license": "BSD-2-Clause",
   "dependencies": {
     "@babel/cli": "^7.13.0",
     "@babel/core": "^7.13.1",
@@ -28,7 +30,6 @@
     "webpack": "^5.24.2",
     "webpack-cli": "^4.5.0",
     "workbox-routing": "^6.1.1",
-    "workbox-strategies": "^6.1.1",
-    "whatwg-fetch": "^3.6.2"
+    "workbox-strategies": "^6.1.1"
   }
 }

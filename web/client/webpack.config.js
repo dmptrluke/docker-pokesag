@@ -3,7 +3,7 @@ const webpack = require("webpack");
 
 module.exports = {
   entry: {
-    index: ['./index.js'],
+    main: ['./main.js'],
     service: ['./service.js']
   },
   context: path.resolve(__dirname),
