@@ -1,9 +1,10 @@
 /*
  * Joppy Furr, 2018
  */
-var express = require ('express');
-var compression = require('compression')
-var postgres = require ('pg').Client;
+const path = require ('path');
+const express = require ('express');
+const compression = require ('compression');
+const postgres = require ('pg').Client;
 
 const DB_HOST = process.env.DB_HOST;
 const DB_NAME = process.env.DB_NAME || 'pokesag';
@@ -24,7 +25,6 @@ function clean_rows (rows)
     }
 }
 
-
 /***********************
  * Database Connection *
  ***********************/
@@ -39,7 +39,6 @@ let db = new postgres (
     } );
 db.connect ();
 
-
 /***************
  * HTTP Server *
  ***************/
@@ -49,10 +48,8 @@ let port = process.env.PORT || 8000;
 
 app.use(compression())
 
-app.use (express.static ('./client/public', { 'index': ['index.html'] } ));
-app.use (express.static ('./client/dist'));
-
-
+app.use (express.static (path.resolve (__dirname, './client/public'), { 'index': ['index.html'] } ));
+app.use (express.static (path.resolve (__dirname, './client/dist')));
 
 /* API to retrieve the 100 most recent pages */
 app.get ('/Pages/', function onListenEvent (req, res) {
