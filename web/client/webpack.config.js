@@ -14,7 +14,7 @@ module.exports = {
         exclude: /(node_modules|bower_components)/,
         loader: "babel-loader",
         options: { 
-          presets: ["@babel/env", "@babel/preset-react"],
+          presets: [["@babel/env", {"useBuiltIns": "usage", "corejs": "3.9"}], "@babel/preset-react"],
           plugins: ["@babel/plugin-proposal-class-properties"]
         }
       }

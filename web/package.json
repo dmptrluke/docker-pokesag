@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "WebApp component of PokéSAG",
   "main": "app.js",
-  "browserslist": "defaults",
+  "browserslist": [
+    "defaults"
+  ],
   "author": "Joppy Furr",
   "scripts": {
     "build-development": "webpack --mode=development --config client/webpack.config.js",
@@ -18,6 +20,7 @@
     "@babel/preset-react": "^7.12.13",
     "babel-loader": "^8.2.2",
     "compression": "^1.7.4",
+    "core-js": "^3.9.1",
     "express": "^4.17.1",
     "pg": "^8.5.1",
     "react": "^17.0.1",
@@ -25,6 +28,7 @@
     "webpack": "^5.24.2",
     "webpack-cli": "^4.5.0",
     "workbox-routing": "^6.1.1",
-    "workbox-strategies": "^6.1.1"
+    "workbox-strategies": "^6.1.1",
+    "whatwg-fetch": "^3.6.2"
   }
 }
