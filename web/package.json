@@ -8,8 +8,8 @@
   ],
   "author": "Joppy Furr",
   "scripts": {
-    "build-development": "webpack --mode=development --config client/webpack.config.js",
-    "build-production": "webpack --mode=production --config client/webpack.config.js"
+    "build-development": "npx webpack --mode=development --config client/webpack.config.js",
+    "build-production": "npx webpack --mode=production --config client/webpack.config.js"
   },
   "license": "BSD-2-Clause",
   "dependencies": {

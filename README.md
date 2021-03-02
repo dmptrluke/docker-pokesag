@@ -1,4 +1,9 @@
-# pokesag-docker
+__Warning: Depending on your region, it may not be legal to share or act upon any messages received by a radio scanner. 
+You are advised to check your local regulations, and to NOT expose PokéSAG to the internet.__
+
+![PokéSAG Logo](web/client/public/images/icon_x128.png)
+
+# PokéSAG (Docker Edition)
 
 A dockerized version of [PokéSAG](https://github.com/JoppyFurr/PokeSAG/) by @JoppyFurr!
 
