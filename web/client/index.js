@@ -1,7 +1,7 @@
 import 'whatwg-fetch';
-import React from "react";
-import ReactDOM from "react-dom";
-import PokeSAG_Client from "./client.js";
+import React from 'react';
+import ReactDOM from 'react-dom';
+import PokeSAG_Client from './client';
 
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker
@@ -9,4 +9,4 @@ if ('serviceWorker' in navigator) {
       .then(() => { console.log('Service Worker Registered'); });
   }
 
-ReactDOM.render(<PokeSAG_Client />, document.getElementById("root"));
+ReactDOM.render(<PokeSAG_Client />, document.getElementById('root'));

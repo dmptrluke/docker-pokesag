@@ -3,15 +3,16 @@ const webpack = require("webpack");
 
 module.exports = {
   entry: {
-    index: [path.resolve(__dirname, './index.js')],
-    service: [path.resolve(__dirname, './service.js')]
+    index: ['./index.js'],
+    service: ['./service.js']
   },
+  context: path.resolve(__dirname),
   devtool: "source-map",
   module: {
     rules: [
       {
         test: /\.(js|jsx)$/,
-        exclude: /(node_modules|bower_components)/,
+        exclude: /node_modules/,
         loader: "babel-loader",
         options: { 
           presets: [["@babel/env", {"useBuiltIns": "usage", "corejs": "3.9"}], "@babel/preset-react"],
