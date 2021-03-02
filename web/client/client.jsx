@@ -1,6 +1,6 @@
 import React from "react";
 
-export default class PokeSAG_Client extends React.Component
+export default class Client extends React.Component
 {
 
     constructor ()
