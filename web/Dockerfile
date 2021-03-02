@@ -1,4 +1,4 @@
-FROM node:12-alpine
+FROM node:15-alpine
 
 ARG BUILD_MODE=production
 ENV NODE_ENV=$BUILD_MODE
