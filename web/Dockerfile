@@ -11,8 +11,6 @@ COPY . .
 
 RUN npm run-script build-${BUILD_MODE}
 
-EXPOSE 8000
-
 ENV DB_HOST=db
 ENV DB_NAME=pokesag
 ENV DB_USER=pokesag
