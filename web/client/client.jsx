@@ -139,13 +139,13 @@ export default class Client extends React.Component
                     <input className="refresh_button" type="button" value="↻" onClick={this.refresh_data} title="Refresh" />
                 </nav>
 
-                <section id="settings" className={this.state.settings_class}>
+                <div id="settings" className={this.state.settings_class}>
                     <h4>Settings</h4>
                     <SettingButton value="Auto Refresh" default_state={false} action={this.handle_refresh_toggle} />
                     <SettingButton value="Full Text Search" default_state={true} action={this.handle_search_toggle} />
-                </section>
+                </div>
 
-                <section id="page_table">
+                <div id="page_table">
                     <table>
                         <thead>
                             <tr>
@@ -159,7 +159,7 @@ export default class Client extends React.Component
                             {pages}
                         </tbody>
                     </table>
-                </section>
+                </div>
             </main>
     }
 }
