@@ -9,7 +9,7 @@ on:
   pull_request:
 
 jobs:
-  build-reciever:
+  build-receiver:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -19,7 +19,7 @@ jobs:
         id: docker_meta
         uses: crazy-max/ghaction-docker-meta@v1
         with:
-          images: dmptrluke/pokesag-server,ghcr.io/dmptrluke/pokesag-reciever
+          images: dmptrluke/pokesag-server,ghcr.io/dmptrluke/pokesag-receiver
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
@@ -48,7 +48,7 @@ jobs:
           context: ./server   
           tags: ${{ steps.docker_meta.outputs.tags }}
           labels: ${{ steps.docker_meta.outputs.labels }}
-          cache-from: type=registry,ref=ghcr.io/dmptrluke/pokesag-reciever:master
+          cache-from: type=registry,ref=ghcr.io/dmptrluke/pokesag-receiver:master
           cache-to: type=inline
 
   build-web:

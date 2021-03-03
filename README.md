@@ -22,13 +22,8 @@ services:
     volumes:
       - pokesag_db:/var/lib/postgresql/data
 
-  web:
-    image: dmptrluke/pokesag-web:latest
-    ports:
-      - "8000:8000"
-
-  server:
-    image: dmptrluke/pokesag-server:latest
+  receiver:
+    image: ghcr.io/dmptrluke/pokesag-receiver:latest
     environment:
       TZ: Pacific/Auckland
     devices:
@@ -36,6 +31,12 @@ services:
       - /dev/bus/usb:/dev/bus/usb
     privileged: true
     restart: on-failure
+
+  web:
+    image: ghcr.io/dmptrluke/pokesag-web:latest
+    ports:
+      - "8000:8000"
+
 volumes:
   pokesag_db:
 ```

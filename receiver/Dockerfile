@@ -38,7 +38,7 @@ RUN git clone --depth 1 https://github.com/vsergeev/luaradio.git \
     && make install-lmod \
     && rm -rf /tmp/luaradio
 
-# Copy server code
+# Copy receiver code
 WORKDIR /code
 COPY . ./
 
@@ -50,4 +50,4 @@ ENV DB_PORT=5432
 
 ENV DISCARD_SPAM=false
 
-CMD ["/code/wait-for", "db:5432", "--", "luajit", "/code/server.lua"]
+CMD ["/code/wait-for", "db:5432", "--", "luajit", "/code/receiver.lua"]

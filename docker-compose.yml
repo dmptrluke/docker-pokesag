@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: pokesag
 
   web: 
-    image: dmptrluke/pokesag-web:latest
+    image: ghcr.io/dmptrluke/pokesag-web:master
     build:
       context: ./web
       args:
@@ -17,8 +17,8 @@ services:
     ports:
       - "8400:8000"
 
-  server:
-    image: dmptrluke/pokesag-server:latest
+  receiver:
+    image: ghcr.io/dmptrluke/pokesag-receiver:master
     build:
       context: ./server
     environment:
