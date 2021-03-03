@@ -13,7 +13,7 @@ input {
     padding: 16px;
 }
 
-.container, header {
+header, main {
     margin-left: auto;
     margin-right: auto;
     width: 85%;
@@ -21,7 +21,7 @@ input {
 
 @media all and (max-width: 768px) {
     /* On medium devices, reduce the page margins */
-    .container, header {
+    header, main {
         width: 90%;
     }
 }

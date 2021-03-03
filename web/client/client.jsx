@@ -129,8 +129,7 @@ export default class Client extends React.Component
         });
 
         /* Generate page */
-        return <main id="container">
-
+        return <main>
                 <nav id="toolbar">
                     <input className={this.state.hamburger_class} type="button" value="☰" onClick={this.toggle_settings} 
                     title="Settings" />
