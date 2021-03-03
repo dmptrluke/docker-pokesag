@@ -45,7 +45,7 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           push: ${{ github.event_name != 'pull_request' }}
-          context: ./server   
+          context: ./receiver
           tags: ${{ steps.docker_meta.outputs.tags }}
           labels: ${{ steps.docker_meta.outputs.labels }}
           cache-from: type=registry,ref=ghcr.io/dmptrluke/pokesag-receiver:master
@@ -87,7 +87,7 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           push: ${{ github.event_name != 'pull_request' }}
-          context: ./web   
+          context: ./web
           tags: ${{ steps.docker_meta.outputs.tags }}
           labels: ${{ steps.docker_meta.outputs.labels }}
           cache-from: type=registry,ref=ghcr.io/dmptrluke/pokesag-web:master
