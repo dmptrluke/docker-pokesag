@@ -48,7 +48,7 @@ jobs:
           context: ./server   
           tags: ${{ steps.docker_meta.outputs.tags }}
           labels: ${{ steps.docker_meta.outputs.labels }}
-          cache-from: type=registry,ref=dmptrluke/pokesag-server:master
+          cache-from: type=registry,ref=ghcr.io/dmptrluke/pokesag-reciever:master
           cache-to: type=inline
 
   build-web:
@@ -72,7 +72,7 @@ jobs:
       - name: Login to DockerHub
         uses: docker/login-action@v1 
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          username: ${{ github.repository_owner }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Login to GitHub Container Registry
@@ -90,5 +90,5 @@ jobs:
           context: ./web   
           tags: ${{ steps.docker_meta.outputs.tags }}
           labels: ${{ steps.docker_meta.outputs.labels }}
-          cache-from: type=registry,ref=dmptrluke/pokesag-web:master
+          cache-from: type=registry,ref=ghcr.io/dmptrluke/pokesag-web:master
           cache-to: type=inline
