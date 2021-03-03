@@ -1,13 +1,12 @@
 # EditorConfig is awesome: https://EditorConfig.org
-
-# top-most EditorConfig file
 root = true
 
-# Unix-style newlines with a newline ending every file
 [*]
-end_of_line = lf
+charset = utf-8
+indent_size = 4
+indent_style = space
 insert_final_newline = true
 
-# don't bother for minified assets
-[*.min.js]
-insert_final_newline = false
+# smaller indents for yaml
+[*.yml]
+indent_size = 2
