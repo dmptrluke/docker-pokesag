@@ -41,7 +41,7 @@ jobs:
           context: ./server   
           tags: ${{ steps.docker_meta.outputs.tags }}
           labels: ${{ steps.docker_meta.outputs.labels }}
-          cache-from: type=registry,ref=dmptrluke/pokesag-server:latest
+          cache-from: type=registry,ref=dmptrluke/pokesag-server:master
           cache-to: type=inline
 
   build-web:
@@ -76,5 +76,5 @@ jobs:
           context: ./web   
           tags: ${{ steps.docker_meta.outputs.tags }}
           labels: ${{ steps.docker_meta.outputs.labels }}
-          cache-from: type=registry,ref=dmptrluke/pokesag-web:latest
+          cache-from: type=registry,ref=dmptrluke/pokesag-web:master
           cache-to: type=inline
