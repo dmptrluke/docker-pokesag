@@ -13,7 +13,7 @@ export default class Client extends React.Component
             search_string: "",
             
             hamburger_class: "hamburger_button",
-            settings_class: "settings hidden",
+            settings_class: "hidden",
 
             full_text_search: false,
             auto_refresh: false,
@@ -71,14 +71,14 @@ export default class Client extends React.Component
     /* Toggle whether the settings are visible or not */
     toggle_settings = () => 
     {
-        if (this.state.settings_class == "settings hidden")
+        if (this.state.settings_class == "hidden")
         {
-            this.setState({settings_class: "settings visible"});
+            this.setState({settings_class: "visible"});
             this.setState({hamburger_class: "hamburger_button green"});
         }
         else
         {
-            this.setState({settings_class: "settings hidden"});
+            this.setState({settings_class: "hidden"});
             this.setState({hamburger_class: "hamburger_button"});
         }
     }
@@ -129,24 +129,24 @@ export default class Client extends React.Component
         });
 
         /* Generate page */
-        return <div className="app_container">
+        return <main id="container">
 
-                <div className="toolbar">
+                <nav id="toolbar">
                     <input className={this.state.hamburger_class} type="button" value="☰" onClick={this.toggle_settings} 
                     title="Settings" />
                     <input className="search_box" type="text" placeholder="Search…" value={this.state.search_string} 
                     onChange={this.update_search_string} onKeyPress={this.handle_search} aria-label="Search Box" />
                     <div className="spacer"></div>
                     <input className="refresh_button" type="button" value="↻" onClick={this.refresh_data} title="Refresh" />
-                </div>
+                </nav>
 
-                <div className={this.state.settings_class}>
+                <section id="settings" className={this.state.settings_class}>
                     <h4>Settings</h4>
                     <SettingButton value="Auto Refresh" default_state={false} action={this.handle_refresh_toggle} />
                     <SettingButton value="Full Text Search" default_state={true} action={this.handle_search_toggle} />
-                </div>
+                </section>
 
-                <div className="page_table">
+                <section id="page_table">
                     <table>
                         <thead>
                             <tr>
@@ -160,8 +160,8 @@ export default class Client extends React.Component
                             {pages}
                         </tbody>
                     </table>
-                </div>
-            </div>
+                </section>
+            </main>
     }
 }
 
