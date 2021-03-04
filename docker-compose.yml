@@ -20,7 +20,7 @@ services:
   receiver:
     image: ghcr.io/dmptrluke/pokesag-receiver:master
     build:
-      context: ./server
+      context: ./receiver
     environment:
       TZ: 'Pacific/Auckland'
       DISCARD_SPAM: 'true'

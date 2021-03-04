@@ -19,5 +19,7 @@ ENV DB_PORT=5432
 
 USER guest
 
+HEALTHCHECK --interval=1m --timeout=5s CMD node /code/healthcheck.js
+
 CMD ["/code/wait-for", "db:5432", "--", "node", "/code/app.js"]
 EXPOSE 8000/tcp
