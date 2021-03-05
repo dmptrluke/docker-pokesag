@@ -53,7 +53,7 @@ app.use (express.static (path.resolve (__dirname, './client/dist')));
 
 /* API to retrieve the 100 most recent pages */
 app.get ('/Pages/', function onListenEvent (req, res) {
-    db.query ('SELECT * FROM pages ORDER BY BY rx_date DESC, recipient DESC LIMIT 150', (query_err, query_res) => {
+    db.query ('SELECT * FROM pages ORDER BY rx_date DESC, recipient DESC LIMIT 150', (query_err, query_res) => {
         if (query_err) {
             throw query_err;
         }
