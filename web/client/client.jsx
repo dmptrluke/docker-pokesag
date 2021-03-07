@@ -135,7 +135,7 @@ export default class Client extends React.Component
     {
         /* Get the list of messages */
         let pages = this.state.pages_database.map ( page => {
-            const formatted_date = DateTime.fromISO(page.rx_date).toFormat(this.state.date_format);
+            const formatted_date = DateTime.fromISO(page.rx_date, {zone: 'local'}).toFormat(this.state.date_format);
             return <tr>
                     <td className="page_rx_date">{formatted_date}</td>
                     <td className="page_source">{page.source}</td>
