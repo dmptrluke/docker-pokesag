@@ -1,4 +1,5 @@
 import pgPromise from 'pg-promise';
+import { DateTime } from 'luxon';
 
 const DB_HOST = process.env.DB_HOST;
 const DB_NAME = process.env.DB_NAME || 'pokesag';
@@ -32,6 +33,10 @@ export const pgp = pgPromise({
     extend(obj, dc) {
         obj.pages = new PagesRepository(obj, pgp);
     }
+});
+
+pgp.pg.types.setTypeParser(pgp.pg.types.builtins.TIMESTAMP, date => {
+    return DateTime.fromSQL(date).toISO();
 });
 
 export const db = pgp ({
