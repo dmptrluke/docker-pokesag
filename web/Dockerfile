@@ -21,5 +21,5 @@ USER guest
 
 HEALTHCHECK --start-period=30s --interval=10s --timeout=5s CMD node /code/healthcheck.js
 
-CMD ["/code/wait-for", "db:5432", "--", "node", "/code/app.js"]
+CMD ["/code/wait-for", "db:5432", "--", "node", "/code/app.mjs"]
 EXPOSE 8000/tcp
