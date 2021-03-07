@@ -12,7 +12,7 @@
   "scripts": {
     "build-development": "npx webpack --mode=development --config client/webpack.config.js",
     "build-production": "npx webpack --mode=production --config client/webpack.config.js",
-    "start": "node app.js"
+    "start": "node app.mjs"
   },
   "dependencies": {
     "@babel/cli": "^7.13.0",
@@ -24,7 +24,9 @@
     "compression": "^1.7.4",
     "core-js": "^3.9.1",
     "express": "^4.17.1",
+    "luxon": "^1.26.0",
     "pg": "^8.5.1",
+    "pg-promise": "^10.9.4",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
     "webpack": "^5.24.3",
