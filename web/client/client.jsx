@@ -49,24 +49,29 @@ export default class Client extends React.Component
         switch (this.state.mode)
         {
             case 'search':
-                let search_type = this.state.full_text_search ? 'ft' : 'basic';
-                fetch ('/pages/search/' + search_type + '/' + encodeURIComponent(this.state.search_string) + '/')
-                    .then ( result => {
-                        result.json()
-                            .then ( json => {
-                                this.setState ( { pages_database: json.data } );
-                            });
+                const type = this.state.full_text_search ? 'ft' : 'basic';
+                const query = encodeURIComponent(this.state.search_string)
+                fetch (`/pages/search/${type}/${query}/`)
+                    .then(result => result.json())
+                    .then(json => {
+                        if (json.status) {
+                            this.setState ({pages_database: json.data});
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Unable to fetch pages:', error);    
                     });
                 break;
 
             case 'normal':
             default:
                 fetch ('/pages/')
-                    .then ( result => {
-                        result.json()
-                            .then ( json => {
-                                this.setState ( { pages_database: json.data } );
-                            });
+                    .then(result => result.json())
+                    .then(json => {
+                        this.setState ({pages_database: json.data});
+                    })
+                    .catch(error => {
+                        console.error('Unable to fetch pages:', error);    
                     });
         }
     }

@@ -28,7 +28,7 @@ function GET(url, handler) {
                 data
             });
         } catch (error) {
-            res.json({
+            res.status(500).json({
                 success: false,
                 error: error.message || error
             });
