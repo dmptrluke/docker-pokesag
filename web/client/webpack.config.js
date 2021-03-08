@@ -3,8 +3,7 @@ const webpack = require("webpack");
 
 module.exports = {
   entry: {
-    main: ['./main.js'],
-    service: ['./service.js']
+    main: ['./main.js']
   },
   context: path.resolve(__dirname),
   devtool: "source-map",
