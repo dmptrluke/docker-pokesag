@@ -17,6 +17,8 @@ app.use(compression())
 app.use (express.static (resolve (__dirname, './client/public'), { 'index': ['index.html'] } ));
 app.use (express.static (resolve (__dirname, './client/dist')));
 
+/* A small wrapper around a app.get handler!
+   This abstracts away generic code that is used on all api requests. */
 function GET(url, handler) {
     app.get(url, async (req, res) => {
         try {
@@ -37,12 +39,12 @@ function GET(url, handler) {
 GET('/pages/', () => db.pages.latest());
 
 GET('/pages/search/ft/:string/', req => {
-    const query = decodeURIComponent(req.params.string);
+    const query = req.params.string;
     return db.pages.search(query);
 });
 
 GET('/pages/search/basic/:string/', req => {
-    const query = decodeURIComponent(req.params.string);
+    const query = req.params.string;
     return db.pages.search_basic(query);
 });
 

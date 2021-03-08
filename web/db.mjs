@@ -19,12 +19,12 @@ class PagesRepository {
     }
 
     search(query) {
-        return this.rep.any(`SELECT rx_date, source, recipient, content FROM pages WHERE tsx @@ websearch_to_tsquery('simple', $1)
+        return this.rep.any(`SELECT rx_date, source, recipient, content FROM pages WHERE tsx @@ websearch_to_tsquery('simple', $1::text)
         ORDER BY rx_date DESC, recipient ASC LIMIT 150`, [query]);
     }
 
     search_basic(query) {
-        return this.rep.any(`SELECT rx_date, source, recipient, content FROM pages WHERE content ILIKE $1 OR recipient=$2
+        return this.rep.any(`SELECT rx_date, source, recipient, content FROM pages WHERE content ILIKE $1::text OR recipient=$2::text
         ORDER BY rx_date DESC, recipient ASC LIMIT 150`, [`%${query}%`, query]);
     }
 }
