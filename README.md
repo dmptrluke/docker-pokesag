@@ -19,6 +19,7 @@ services:
     environment:
       POSTGRES_USER: pokesag
       POSTGRES_PASSWORD: pokesag
+      TZ: Pacific/Auckland
     volumes:
       - pokesag_db:/var/lib/postgresql/data
 
@@ -34,6 +35,8 @@ services:
 
   web:
     image: ghcr.io/dmptrluke/pokesag-web:latest
+    environment:
+      TZ: Pacific/Auckland
     ports:
       - "8000:8000"
 
