@@ -22,6 +22,7 @@ services:
       TZ: Pacific/Auckland
     volumes:
       - pokesag_db:/var/lib/postgresql/data
+    restart: always
 
   receiver:
     image: ghcr.io/dmptrluke/pokesag-receiver:latest
@@ -31,7 +32,7 @@ services:
       - /dev/swradio0:/dev/swradio0
       - /dev/bus/usb:/dev/bus/usb
     privileged: true
-    restart: on-failure
+    restart: always
 
   web:
     image: ghcr.io/dmptrluke/pokesag-web:latest
@@ -39,6 +40,7 @@ services:
       TZ: Pacific/Auckland
     ports:
       - "8000:8000"
+    restart: always
 
 volumes:
   pokesag_db:
