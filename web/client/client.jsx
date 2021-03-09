@@ -3,7 +3,6 @@ import { DateTime } from 'luxon';
 
 export default class Client extends React.Component
 {
-
     constructor ()
     {
         super ();
@@ -50,30 +49,30 @@ export default class Client extends React.Component
         {
             case 'search':
                 const type = this.state.full_text_search ? 'ft' : 'basic';
-                const query = encodeURIComponent(this.state.search_string);
-                var request = `/pages/search/${type}/${query}/`;
+                const query = encodeURIComponent (this.state.search_string);
+                var url = `/pages/search/${type}/${query}/`;
                 break;
 
             case 'normal':
             default:
-                var request = `/pages/`;
+                var url = `/pages/`;
         }
 
-        fetch (request)
-            .then(result => result.json())
-            .then(json => {
+        fetch (url)
+            .then (result => result.json ())
+            .then (json => {
                 if (!json.success) {
-                    throw Error(json.error);
+                    throw Error (json.error);
                 }
                 this.setState ({pages_database: json.data});
             })
-            .catch(error => {
-                console.error('Unable to fetch pages:', error);    
+            .catch (error => {
+                console.error ('Unable to fetch pages:', error);    
             });
     }
 
     /* Toggle whether the settings are visible or not */
-    toggle_settings = () => 
+    toggle_settings = () =>
     {
         if (this.state.settings_class == "hidden")
         {
@@ -96,13 +95,15 @@ export default class Client extends React.Component
     {
         if (is_active)
         {
-            this.setState({
-                auto_refresh_timer: setInterval(() => this.refresh_data(null), 10000),
+            this.setState ({
+                auto_refresh_timer: setInterval (() => this.refresh_data (null), 10000),
                 auto_refresh: true
             });
-        } else {
-            clearInterval(this.state.auto_refresh_timer);
-            this.setState({
+        } 
+        else 
+        {
+            clearInterval (this.state.auto_refresh_timer);
+            this.setState ({
                 auto_refresh_timer: null,
                 auto_refresh: false
             });
@@ -140,7 +141,7 @@ export default class Client extends React.Component
             return <tr>
                     <td className="page_rx_date">{formatted_date}</td>
                     <td className="page_source">{page.source}</td>
-                    <td className="page_recipient"  onClick={() => this.handle_recipient_click (page.recipient)}>{page.recipient}</td>
+                    <td className="page_recipient" onClick={() => this.handle_recipient_click (page.recipient)}>{page.recipient}</td>
                     <td className="page_content">{page.content}</td>
                 </tr>
         });
