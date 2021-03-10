@@ -13,19 +13,19 @@ class PagesRepository {
         this.pgp = pgp;
     }
 
-    latest() {
+    latest(offset=0) {
         return this.rep.any(`SELECT id, rx_date, source, recipient, content FROM pages 
-        ORDER BY rx_date DESC, recipient ASC LIMIT 150`);
+        ORDER BY rx_date DESC, recipient ASC LIMIT 150 OFFSET $1::int`, [offset]);
     }
 
-    search(query) {
-        return this.rep.any(`SELECT id, rx_date, source, recipient, content FROM pages WHERE tsx @@ websearch_to_tsquery('simple', $1::text)
-        ORDER BY rx_date DESC, recipient ASC LIMIT 150`, [query]);
+    search(query, offset=0) {
+        return this.rep.any(`SELECT id, rx_date, source, recipient, content FROM pages WHERE tsx @@ websearch_to_tsquery('simple', $2::text)
+        ORDER BY rx_date DESC, recipient ASC LIMIT 150 OFFSET $1::int`, [offset, query]);
     }
 
-    search_basic(query) {
-        return this.rep.any(`SELECT id, rx_date, source, recipient, content FROM pages WHERE content ILIKE $1::text OR recipient=$2::text
-        ORDER BY rx_date DESC, recipient ASC LIMIT 150`, [`%${query}%`, query]);
+    search_basic(query, offset=0) {
+        return this.rep.any(`SELECT id, rx_date, source, recipient, content FROM pages WHERE content ILIKE $2::text OR recipient=$3::text
+        ORDER BY rx_date DESC, recipient ASC LIMIT 150 OFFSET $1::int`, [offset, `%${query}%`, query]);
     }
 }
 

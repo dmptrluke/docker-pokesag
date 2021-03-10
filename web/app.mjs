@@ -36,17 +36,18 @@ function GET(url, handler) {
     });
 }
 
-GET('/pages/', () => db.pages.latest());
+function offset(req) {
+    return Math.max (0, (parseInt (req.params.page) - 1) * 150) || 0;
+}
 
-GET('/pages/search/ft/:string/', req => {
-    const query = req.params.string;
-    return db.pages.search(query);
-});
+GET('/pages/', () => db.pages.latest ());
+GET('/pages/:page/', req => db.pages.latest (offset (req)));
 
-GET('/pages/search/basic/:string/', req => {
-    const query = req.params.string;
-    return db.pages.search_basic(query);
-});
+GET('/pages/search/ft/:q/', req => db.pages.search (req.params.q));
+GET('/pages/search/ft/:q/:page/', req => db.pages.search (req.params.q, offset (req)));
+
+GET('/pages/search/basic/:q/', req => db.pages.search_basic (req.params.q));
+GET('/pages/search/basic/:q/:page/', req => db.pages.search_basic (req.params.q, offset (req)));
 
 let server = app.listen (port, '::', () => {
     console.log ('Listening on port %s.', server.address ().port);
