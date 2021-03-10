@@ -159,13 +159,14 @@ export default class Client extends React.Component
         /* Generate page */
         return <main>
                 <nav id="toolbar">
-                    <input className={this.state.hamburger_class} type="button" value="☰" onClick={this.toggle_settings} 
-                    title="Settings" />
-                    <input className="search_box" type="text" placeholder="Search…" value={this.state.search_string} 
-                    onChange={this.update_search_string} onKeyPress={this.handle_search} aria-label="Search Box" />
+                    <button className={this.state.hamburger_class} onClick={this.toggle_settings} 
+                            title="Settings"><i class="bi bi-list"></i></button>
+                    <input className="search_box" type="text" placeholder="Search…" value={this.state.search_string}
+                           onChange={this.update_search_string} onKeyPress={this.handle_search} aria-label="Search Box" />
                     <div className="spacer"></div>
                     <Pagination on_change={this.handle_page_change} page={this.state.page}/>
-                    <input className="refresh_button" type="button" value="↻" onClick={this.refresh_clean} title="Refresh" />
+                    <button className="refresh_button" onClick={this.refresh_clean} 
+                            title="Refresh"><i class="bi bi-arrow-clockwise"></i></button>
                 </nav>
 
                 <div id="settings" className={this.state.settings_class}>
@@ -242,11 +243,15 @@ class Pagination extends React.Component {
     }
     render () {
         return (
-            <nav id="pagination">
-                <input type="button" value="‹" onClick={this.back}/>
-                <input type="button" value={this.props.page} onClick={this.clear}/>
-                <input type="button" value="›" onClick={this.forward}/>
-            </nav>
+            <span>
+                {this.props.page > 1 &&
+                    <button onClick={this.back}><i class="bi bi-chevron-left"></i></button>
+                }
+                {this.props.page > 1 &&
+                    <button onClick={this.clear}>{this.props.page}</button>
+                }
+                <button onClick={this.forward}><i class="bi bi-chevron-right"></i></button>
+            </span>
         )
     }
 }

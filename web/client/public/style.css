@@ -6,7 +6,7 @@ body {
     overflow: scroll;
 }
 
-input {
+input, button {
     color: #c0c0c0;
     background-color: #404040;
     border: none;
@@ -112,17 +112,17 @@ header h1 {
     }
 }
 
-#toolbar input {
+#toolbar input, #toolbar button {
     border-right: 2px solid #606060;
     padding-left: 24px;
     padding-right: 24px;
 }
 
-#toolbar input[type=button]:hover {
+#toolbar input[type=button]:hover, #toolbar button:hover {
     color: #ffc080;
 }
 
-#toolbar input[type=button]:active {
+#toolbar input[type=button]:active, #toolbar button:active  {
     color: #e0a060;
 }
 
