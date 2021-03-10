@@ -15,17 +15,17 @@ class PagesRepository {
 
     latest(offset=0) {
         return this.rep.any(`SELECT id, rx_date, source, recipient, content FROM pages 
-        ORDER BY rx_date DESC, recipient ASC LIMIT 150 OFFSET $1::int`, [offset]);
+        ORDER BY rx_date DESC, recipient ASC LIMIT 100 OFFSET $1::int`, [offset]);
     }
 
     search(query, offset=0) {
         return this.rep.any(`SELECT id, rx_date, source, recipient, content FROM pages WHERE tsx @@ websearch_to_tsquery('simple', $2::text)
-        ORDER BY rx_date DESC, recipient ASC LIMIT 150 OFFSET $1::int`, [offset, query]);
+        ORDER BY rx_date DESC, recipient ASC LIMIT 100 OFFSET $1::int`, [offset, query]);
     }
 
     search_basic(query, offset=0) {
         return this.rep.any(`SELECT id, rx_date, source, recipient, content FROM pages WHERE content ILIKE $2::text OR recipient=$3::text
-        ORDER BY rx_date DESC, recipient ASC LIMIT 150 OFFSET $1::int`, [offset, `%${query}%`, query]);
+        ORDER BY rx_date DESC, recipient ASC LIMIT 100 OFFSET $1::int`, [offset, `%${query}%`, query]);
     }
 }
 
