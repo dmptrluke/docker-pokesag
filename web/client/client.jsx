@@ -138,7 +138,7 @@ export default class Client extends React.Component
         /* Get the list of messages */
         let pages = this.state.pages_database.map ( page => {
             const formatted_date = DateTime.fromISO(page.rx_date).toFormat(this.state.date_format);
-            return <tr>
+            return <tr key={page.id}>
                     <td className="page_rx_date">{formatted_date}</td>
                     <td className="page_source">{page.source}</td>
                     <td className="page_recipient" onClick={() => this.handle_recipient_click (page.recipient)}>{page.recipient}</td>

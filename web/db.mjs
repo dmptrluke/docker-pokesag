@@ -14,17 +14,17 @@ class PagesRepository {
     }
 
     latest() {
-        return this.rep.any(`SELECT rx_date, source, recipient, content FROM pages 
+        return this.rep.any(`SELECT id, rx_date, source, recipient, content FROM pages 
         ORDER BY rx_date DESC, recipient ASC LIMIT 150`);
     }
 
     search(query) {
-        return this.rep.any(`SELECT rx_date, source, recipient, content FROM pages WHERE tsx @@ websearch_to_tsquery('simple', $1::text)
+        return this.rep.any(`SELECT id, rx_date, source, recipient, content FROM pages WHERE tsx @@ websearch_to_tsquery('simple', $1::text)
         ORDER BY rx_date DESC, recipient ASC LIMIT 150`, [query]);
     }
 
     search_basic(query) {
-        return this.rep.any(`SELECT rx_date, source, recipient, content FROM pages WHERE content ILIKE $1::text OR recipient=$2::text
+        return this.rep.any(`SELECT id, rx_date, source, recipient, content FROM pages WHERE content ILIKE $1::text OR recipient=$2::text
         ORDER BY rx_date DESC, recipient ASC LIMIT 150`, [`%${query}%`, query]);
     }
 }

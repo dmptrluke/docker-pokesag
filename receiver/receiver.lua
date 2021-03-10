@@ -54,6 +54,21 @@ function create_database ()
         return false
     end
 
+    print ('Attempting to create id column...')
+    local rc = db:exec [[
+        ALTER TABLE pages
+        ADD COLUMN IF NOT EXISTS id integer
+        GENERATED ALWAYS AS IDENTITY PRIMARY KEY;
+    ]]
+
+    if rc:status() == postgres.PGRES_COMMAND_OK then
+        print ('...id column okay.')
+    else
+        print ('Error creating id column.')
+        print (rc:errorMessage ())
+        return false
+    end
+
     print ('Attempting to create search index column...')
     local rc = db:exec [[
         ALTER TABLE pages
@@ -68,6 +83,7 @@ function create_database ()
         print (rc:errorMessage ())
         return false
     end
+
 
     print ('Attempting to create search index...')
     local rc = db:exec [[
