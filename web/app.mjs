@@ -37,7 +37,7 @@ function GET(url, handler) {
 }
 
 function offset(req) {
-    return Math.max (0, (parseInt (req.params.page) - 1) * 150) || 0;
+    return Math.max (0, (parseInt (req.params.page) - 1) * 100) || 0;
 }
 
 GET('/pages/', () => db.pages.latest ());
