@@ -91,7 +91,7 @@ header h1 {
     display: flex;
 }
 
-#toolbar > *:last-child {
+#toolbar > *:last-child, #transporter > *:last-child {
     border-right: 0;
 }
 

@@ -159,14 +159,13 @@ export default class Client extends React.Component
         /* Generate page */
         return <main>
                 <nav id="toolbar">
-                    <button className={this.state.hamburger_class} onClick={this.toggle_settings} 
-                            title="Settings"><i class="bi bi-list"></i></button>
+                    <button className={this.state.hamburger_class} onClick={this.toggle_settings} title="Settings">
+                        <i className="bi-list"></i>
+                    </button>
                     <input className="search_box" type="text" placeholder="Search…" value={this.state.search_string}
                            onChange={this.update_search_string} onKeyPress={this.handle_search} aria-label="Search Box" />
                     <div className="spacer"></div>
-                    <Pagination on_change={this.handle_page_change} page={this.state.page}/>
-                    <button className="refresh_button" onClick={this.refresh_clean} 
-                            title="Refresh"><i class="bi bi-arrow-clockwise"></i></button>
+                    <Transporter on_change={this.handle_page_change} page={this.state.page}/>
                 </nav>
 
                 <div id="settings" className={this.state.settings_class}>
@@ -221,37 +220,49 @@ class SettingButton extends React.Component {
     }
 }
 
-
-class Pagination extends React.Component {
-    constructor(props) {
-        super(props);
-    }
-
-    back = () => {
-        const page = (this.props.page - 1) > 0 ? (this.props.page - 1) : 1;
-        this.props.on_change(page);
+class Transporter extends React.Component {
+    constructor (props) {
+        super (props);
     }
 
     clear = () => {
         const page = 1;
-        this.props.on_change(page);
+        this.props.on_change (page);
     }
 
-    forward = () => {
-        const page = this.props.page + 1;
-        this.props.on_change(page);
+    previous = () => {
+        const page = (this.props.page - 1) > 0 ? (this.props.page - 1) : 1;
+        this.props.on_change (page);
     }
+
+    next = () => {
+        const page = this.props.page + 1;
+        this.props.on_change (page);
+    }
+
     render () {
         return (
-            <span>
+            <nav id="transporter">
                 {this.props.page > 1 &&
-                    <button onClick={this.back}><i class="bi bi-chevron-left"></i></button>
+                    <button onClick={this.previous} title="Previous Page">
+                        <i className="bi-chevron-left"></i>
+                    </button>
                 }
                 {this.props.page > 1 &&
-                    <button onClick={this.clear}>{this.props.page}</button>
+                    <button onClick={this.clear}>
+                        {this.props.page}
+                    </button>
                 }
-                <button onClick={this.forward}><i class="bi bi-chevron-right"></i></button>
-            </span>
+                <button onClick={this.next} title="Next Page">
+                    <i className="bi-chevron-right"></i>
+                </button>
+                <button onClick={this.clear} title="Refresh">
+                {this.props.page > 1
+                    ? <i className="bi-arrow-90deg-up"></i>
+                    : <i className="bi-arrow-clockwise"></i>
+                }
+                </button>
+            </nav>
         )
     }
 }
