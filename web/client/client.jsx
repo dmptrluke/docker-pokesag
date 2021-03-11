@@ -249,7 +249,7 @@ class Transporter extends React.Component {
                     </button>
                 }
                 {this.props.page > 1 &&
-                    <button onClick={this.clear}>
+                    <button id="page_num" onClick={this.clear}>
                         {this.props.page}
                     </button>
                 }

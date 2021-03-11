@@ -91,6 +91,10 @@ header h1 {
     display: flex;
 }
 
+#transporter { 
+    display: flex;
+}
+
 #toolbar > *:last-child, #transporter > *:last-child {
     border-right: 0;
 }
@@ -109,6 +113,13 @@ header h1 {
     #toolbar .search_box {
         flex-grow: 1;
         min-width: 0;
+    }
+}
+
+@media all and (max-width: 575px) {
+    /* On small devices, hide the page number */
+    #page_num {
+        display: none;
     }
 }
 
