@@ -15,7 +15,7 @@
     "start": "node app.mjs"
   },
   "dependencies": {
-    "@babel/cli": "^7.14.5",
+    "@babel/cli": "^7.18.10",
     "@babel/core": "^7.18.13",
     "@babel/plugin-proposal-class-properties": "^7.14.5",
     "@babel/preset-env": "^7.16.4",
