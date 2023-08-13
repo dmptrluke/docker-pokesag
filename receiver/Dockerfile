@@ -1,4 +1,4 @@
-FROM nickblah/luajit:2-lua52compat-luarocks-bookworm
+FROM nickblah/luajit:2.1-beta-lua52compat-luarocks
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
