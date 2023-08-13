@@ -1,4 +1,4 @@
-FROM nickblah/luajit:2-lua52compat-luarocks-buster
+FROM nickblah/luajit:2-lua52compat-luarocks-bookworm
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
@@ -7,9 +7,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libusb-1.0-0-dev \
     libpq-dev \
     pkg-config \
-    netcat \
+    netcat-openbsd \
     libliquid-dev \
-    libvolk1-dev \
+    libvolk2-dev \
     libfftw3-dev \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
