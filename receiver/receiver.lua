@@ -203,17 +203,17 @@ local PokeSAG = radio.CompositeBlock ()
 -- Receiver frequency: 157.900 MHz
 local source = radio.RtlSdrSource (157900000, 1000000)
 
--- Telecom: 157.925 MHz
-local telecom925_tuner   = radio.TunerBlock (-25000, 12e3, 80)
-local telecom925_decoder = radio.POCSAGReceiver (1200)
-local telecom925_sink    = DBSink ('Telecom 925')
-PokeSAG:connect (source, telecom925_tuner, telecom925_decoder, telecom925_sink)
+-- Spark: 157.925 MHz
+local spark925_tuner   = radio.TunerBlock (-25000, 12e3, 80)
+local spark925_decoder = radio.POCSAGReceiver (1200)
+local spark925_sink    = DBSink ('Spark 925')
+PokeSAG:connect (source, spark925_tuner, spark925_decoder, spark925_sink)
 
--- Telecom: 157.950 MHz
-local telecom950_tuner   = radio.TunerBlock (-50000, 12e3, 80)
-local telecom950_decoder = radio.POCSAGReceiver (1200)
-local telecom950_sink    = DBSink ('Telecom 950')
-PokeSAG:connect (source, telecom950_tuner, telecom950_decoder, telecom950_sink)
+-- Spark: 157.950 MHz
+local spark950_tuner   = radio.TunerBlock (-50000, 12e3, 80)
+local spark950_decoder = radio.POCSAGReceiver (1200)
+local spark950_sink    = DBSink ('Spark 950')
+PokeSAG:connect (source, spark950_tuner, spark950_decoder, spark950_sink)
 
 -- Hospital: 157.975 MHz
 local hospital_tuner     = radio.TunerBlock (-75000, 12e3, 80)

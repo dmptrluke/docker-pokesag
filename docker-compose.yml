@@ -12,6 +12,7 @@ services:
     image: ghcr.io/dmptrluke/pokesag-web:master
     build:
       context: ./web
+      dockerfile: Dockerfile
       args:
         BUILD_MODE: "development"
     ports:
@@ -21,6 +22,7 @@ services:
     image: ghcr.io/dmptrluke/pokesag-receiver:master
     build:
       context: ./receiver
+      dockerfile: Dockerfile
     environment:
       TZ: 'Pacific/Auckland'
       DISCARD_SPAM: 'true'
