@@ -16,6 +16,7 @@ version: "3.8"
 services:
   db:
     image: postgres:15
+    container_name: pokesag_db
     environment:
       POSTGRES_USER: pokesag
       POSTGRES_PASSWORD: pokesag
@@ -26,6 +27,7 @@ services:
 
   receiver:
     image: ghcr.io/dmptrluke/pokesag-receiver:latest
+    container_name: pokesag_receiver
     environment:
       TZ: Pacific/Auckland
     devices:
@@ -36,6 +38,7 @@ services:
 
   web:
     image: ghcr.io/dmptrluke/pokesag-web:latest
+    container_name: pokesag_web
     environment:
       TZ: Pacific/Auckland
     ports:
@@ -51,13 +54,13 @@ You can also choose to use an external database by omitting the `db` container a
 ## Step by Step
 If you're new to Docker, below is a step by step guide to running PokéSAG in Docker. 
 
-First of all, you'll need to install Docker. Head to the [official documentation](https://docs.docker.com/engine/install/) and select your Linux distro under the "Server" section and follow the instructions on the page. Then install docker-compose - the instructions for that are [here](https://docs.docker.com/compose/install/).
+First of all, you'll need to install Docker. Head to the [official documentation](https://docs.docker.com/engine/install/) and select your Linux distro under the "Server" section and follow the instructions on the page.
 
 After that, create a new folder to work in to keep things tidy. In that folder create a file called `docker-compose.yml` with the text in the previous section, and save it. If you just want a basic install of PokéSAG, you won't need to edit anything.
 
-Finally, run `docker-compose up` to start PokéSAG! This will run in the foreground. When you're happy with how everything is working, you can use `docker-compose up -d` to run everything in the background.
+Finally, run `docker compose up` to start PokéSAG! This will run in the foreground. When you're happy with how everything is working, you can use `docker compose up -d` to run everything in the background.
 
-To update to the latest version, just run `docker-compose pull` and then `docker-compose up -d` again.
+To update to the latest version, just run `docker compose pull` and then `docker compose up -d` again.
 
 ## License
 
