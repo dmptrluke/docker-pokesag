@@ -34,6 +34,8 @@ services:
       - /dev/bus/usb:/dev/bus/usb
     privileged: true
     restart: always
+    volumes:
+      # - ./hoverCodes.json:/code/client/public/hoverCodes.json   # If you have a hoverCodes.json file, place it here. This is not provided with the project.
 
   web:
     image: ghcr.io/dmptrluke/pokesag-web:latest

@@ -79,6 +79,48 @@ header h1 {
     overflow-wrap: anywhere;
 }
 
+/* Hover code badge + tooltip */
+.code-badge {
+    position: relative;
+    color: #ffc080;
+    cursor: help;
+    border-bottom: 1px dotted #ffc080;
+}
+
+.code-badge:hover {
+    color: #ffe0b0;
+}
+
+.code-badge:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #222;
+    color: #f0f0f0;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    white-space: nowrap;
+    z-index: 100;
+    pointer-events: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+
+/* Tooltip arrow */
+.code-badge:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #222;
+    z-index: 100;
+    pointer-events: none;
+}
+
 @media all and (max-width: 575px) {
     /* On small devices, collapse the table */
     #page_table tr {    
