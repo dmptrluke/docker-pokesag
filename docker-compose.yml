@@ -1,5 +1,4 @@
 ---
-version: "3.8"
 
 services:
   db:
@@ -26,7 +25,8 @@ services:
     environment:
       TZ: 'Pacific/Auckland'
       DISCARD_SPAM: 'true'
+      # RTL_DEVICE_SERIAL: ''
+      # RTL_DEVICE_INDEX: '0'
     devices:
-      - /dev/swradio0:/dev/swradio0
       - /dev/bus/usb:/dev/bus/usb
     privileged: true

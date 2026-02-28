@@ -1,11 +1,11 @@
-FROM nickblah/luajit:2-lua52compat-luarocks
+FROM nickblah/luajit:2-lua52compat-luarocks-bookworm
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     cmake \
     git \
     libusb-1.0-0-dev \
-    libpq-dev \
+    libssl-dev \
     pkg-config \
     netcat-openbsd \
     libliquid-dev \
@@ -13,9 +13,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libfftw3-dev \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Install LuaSQL
+# Install pgmoon (pure Lua PostgreSQL driver)
 WORKDIR /tmp
-RUN luarocks install luapgsql PQ_INCDIR=/usr/include/postgresql
+RUN luarocks install pgmoon \
+    && luarocks install luasocket \
+    && luarocks install luaossl
 
 # Install RTL-SDR
 WORKDIR /tmp

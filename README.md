@@ -11,8 +11,6 @@ To run a full stack of `pokesag-docker` (including a database), you can use the 
 
 ```yaml
 ---
-version: "3.8"
-
 services:
   db:
     image: postgres:15
@@ -30,8 +28,9 @@ services:
     container_name: pokesag_receiver
     environment:
       TZ: Pacific/Auckland
+      # RTL_DEVICE_SERIAL: '00000001'  # Select RTL-SDR by serial number
+      # RTL_DEVICE_INDEX: '0'          # Or select by device index
     devices:
-      - /dev/swradio0:/dev/swradio0
       - /dev/bus/usb:/dev/bus/usb
     privileged: true
     restart: always
@@ -51,6 +50,19 @@ volumes:
 
 You can also choose to use an external database by omitting the `db` container and using the `DB_HOST`/`DB_NAME`/`DB_USER`/`DB_PASS` environment variables on the `web` and `receiver` containers.
 
+## RTL-SDR Device Selection
+
+If you have multiple RTL-SDR dongles connected, you can select which one PokéSAG uses via environment variables on the `receiver` container:
+
+| Variable | Description |
+|----------|-------------|
+| `RTL_DEVICE_SERIAL` | Select the RTL-SDR device by its serial number (recommended). |
+| `RTL_DEVICE_INDEX` | Select the RTL-SDR device by index (0-based). |
+
+If neither is set, the receiver defaults to device index 0.
+
+Using `RTL_DEVICE_SERIAL` is recommended over `RTL_DEVICE_INDEX` because device indices can change across reboots, while serial numbers are stable. You can find your dongle's serial number by running `rtl_test` on the host.
+
 ## Step by Step
 If you're new to Docker, below is a step by step guide to running PokéSAG in Docker. 
 
@@ -68,7 +80,7 @@ This software is released under the MIT license.
 
 ```
 Copyright (c) 2018 Joppy Furr
-Copyright (c) 2020-2023 Luke Rogers
+Copyright (c) 2020-2026 Luke Rogers
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

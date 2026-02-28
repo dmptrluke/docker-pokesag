@@ -10,11 +10,72 @@ local DB_PASS = os.getenv('DB_PASS')
 local DB_PORT = os.getenv('DB_PORT')
 
 local DISCARD_SPAM = os.getenv("DISCARD_SPAM")
+local RTL_DEVICE_SERIAL = os.getenv("RTL_DEVICE_SERIAL")
+local RTL_DEVICE_INDEX = os.getenv("RTL_DEVICE_INDEX")
+
+--------------------------
+--  RTL-SDR Device Selection --
+--------------------------
+local ffi = require('ffi')
+
+ffi.cdef[[
+    uint32_t rtlsdr_get_device_count(void);
+    int rtlsdr_get_device_usb_strings(uint32_t index, char *manufact, char *product, char *serial);
+]]
+
+local rtlsdr_ok, librtlsdr = pcall(ffi.load, "rtlsdr")
+
+function find_device_by_serial (target_serial)
+    if not rtlsdr_ok then
+        print('Warning: Could not load librtlsdr for device enumeration.')
+        return nil
+    end
+
+    local count = librtlsdr.rtlsdr_get_device_count()
+    print(string.format('Found %d RTL-SDR device(s):', count))
+
+    for i = 0, count - 1 do
+        local manufact = ffi.new('char[256]')
+        local product = ffi.new('char[256]')
+        local serial = ffi.new('char[256]')
+        local ret = librtlsdr.rtlsdr_get_device_usb_strings(i, manufact, product, serial)
+        if ret == 0 then
+            local serial_str = ffi.string(serial)
+            print(string.format('  Device %d: %s %s (serial: %q)', i,
+                ffi.string(manufact), ffi.string(product), serial_str))
+            if serial_str == target_serial then
+                return i
+            end
+        end
+    end
+
+    return nil
+end
+
+function select_device_index ()
+    if RTL_DEVICE_SERIAL ~= nil then
+        local idx = find_device_by_serial(RTL_DEVICE_SERIAL)
+        if idx ~= nil then
+            print(string.format('Selected RTL-SDR device %d by serial %q.', idx, RTL_DEVICE_SERIAL))
+            return idx
+        else
+            print(string.format('ERROR: No RTL-SDR device found with serial %q.', RTL_DEVICE_SERIAL))
+            os.exit(1)
+        end
+    elseif RTL_DEVICE_INDEX ~= nil then
+        local idx = tonumber(RTL_DEVICE_INDEX) or 0
+        print(string.format('Using RTL-SDR device index %d (from RTL_DEVICE_INDEX).', idx))
+        return idx
+    else
+        print('No RTL_DEVICE_SERIAL or RTL_DEVICE_INDEX set, using device 0.')
+        return 0
+    end
+end
 
 ----------------
 --  Database  --
 ----------------
-local postgres = require ('pgsql')
+local pgmoon = require ('pgmoon')
 
 
 -- Note: Each radio block runs in its own process, so we can't share a single
@@ -23,22 +84,35 @@ local postgres = require ('pgsql')
 --       store its own database connection.
 --       Note: This will mean we need a destructor for the DBSink block.
 
+function get_db ()
+    local pg = pgmoon.new ({
+        host = DB_HOST,
+        port = DB_PORT,
+        database = DB_NAME,
+        user = DB_USER,
+        password = DB_PASS,
+    })
+
+    local ok, err = pg:connect ()
+    if not ok then
+        return nil, err
+    end
+    return pg
+end
+
 -- Create the table if it doesn't already exist
 function create_database ()
-    local db = postgres.connectdb (
-        'postgresql://' .. DB_USER .. ':' .. DB_PASS .. '@' .. DB_HOST .. ':' .. DB_PORT .. '/' .. DB_NAME)
-
-    if db:status() == postgres.CONNECTION_OK then
-        print ('Connected to database.')
-    else
+    local pg, err = get_db ()
+    if not pg then
         print ('Error connecting to database.')
-        print (db:errorMessage())
+        print (err)
         return false
     end
 
+    print ('Connected to database.')
 
     print ('Attempting to create table...')
-    local rc = db:exec [[
+    local res, err = pg:query [[
         CREATE TABLE IF NOT EXISTS pages (
             rx_date     timestamp   not null,
             source      text        not null,
@@ -46,59 +120,58 @@ function create_database ()
             content     text        not null);
     ]]
 
-    if rc:status() == postgres.PGRES_COMMAND_OK then
-        print ('...table okay.')
-    else
+    if not res then
         print ('Error creating table.')
-        print (rc:errorMessage ())
+        print (err)
+        pg:disconnect ()
         return false
     end
+    print ('...table okay.')
 
     print ('Attempting to create id column...')
-    local rc = db:exec [[
+    res, err = pg:query [[
         ALTER TABLE pages
         ADD COLUMN IF NOT EXISTS id integer
         GENERATED ALWAYS AS IDENTITY PRIMARY KEY;
     ]]
 
-    if rc:status() == postgres.PGRES_COMMAND_OK then
-        print ('...id column okay.')
-    else
+    if not res then
         print ('Error creating id column.')
-        print (rc:errorMessage ())
+        print (err)
+        pg:disconnect ()
         return false
     end
+    print ('...id column okay.')
 
     print ('Attempting to create search index column...')
-    local rc = db:exec [[
+    res, err = pg:query [[
         ALTER TABLE pages
         ADD COLUMN IF NOT EXISTS tsx tsvector
         GENERATED ALWAYS AS (to_tsvector('simple', recipient || ' ' || content)) STORED;
     ]]
 
-    if rc:status() == postgres.PGRES_COMMAND_OK then
-        print ('...search index column okay.')
-    else
+    if not res then
         print ('Error creating search index column.')
-        print (rc:errorMessage ())
+        print (err)
+        pg:disconnect ()
         return false
     end
-
+    print ('...search index column okay.')
 
     print ('Attempting to create search index...')
-    local rc = db:exec [[
+    res, err = pg:query [[
         CREATE INDEX IF NOT EXISTS search_idx ON pages USING GIN (tsx);
     ]]
 
-    if rc:status() == postgres.PGRES_COMMAND_OK then
-        print ('...search index okay.')
-    else
+    if not res then
         print ('Error creating search index.')
-        print (rc:errorMessage ())
+        print (err)
+        pg:disconnect ()
         return false
     end
+    print ('...search index okay.')
 
-    db:finish ()
+    pg:disconnect ()
     return true
 end
 
@@ -115,35 +188,31 @@ function is_spam (content)
     end
 end
 
--- Use a prepared statement to store a page in the database
+-- Store a page in the database
 function store_page (date, source, address, content)
     if (DISCARD_SPAM == 'true') and is_spam(content) then
         return
     end
 
-    local db = postgres.connectdb (
-        'postgresql://' .. DB_USER .. ':' .. DB_PASS .. '@' .. DB_HOST .. ':' .. DB_PORT .. '/' .. DB_NAME)
-
-    local rc = db:prepare ('add-page',
-        [[
-            insert into pages (
-                rx_date,
-                source,
-                recipient,
-                content)
-            values ($1, $2, $3, $4);
-        ]]
-    )
-    if rc:status() ~= postgres.PGRES_COMMAND_OK then
-        print ("Create prepared statement: " .. rc:errorMessage ())
+    local pg, err = get_db ()
+    if not pg then
+        print ('Error connecting to database: ' .. (err or 'unknown'))
+        return
     end
 
-    rc = db:execPrepared ('add-page', date, source, address, content)
-    if rc:status() ~= postgres.PGRES_COMMAND_OK then
-        print ("Exec prepared statement: " .. rc:errorMessage ())
+    local res, err = pg:query (string.format (
+        "INSERT INTO pages (rx_date, source, recipient, content) VALUES (%s, %s, %s, %s)",
+        pg:escape_literal (date),
+        pg:escape_literal (source),
+        pg:escape_literal (address),
+        pg:escape_literal (content)
+    ))
+
+    if not res then
+        print ('Error inserting page: ' .. (err or 'unknown'))
     end
 
-    db:finish ()
+    pg:disconnect ()
 end
 
 
@@ -200,8 +269,11 @@ end
 ----------------
 local PokeSAG = radio.CompositeBlock ()
 
+-- Select the correct RTL-SDR device
+local device_index = select_device_index ()
+
 -- Receiver frequency: 157.900 MHz
-local source = radio.RtlSdrSource (157900000, 1000000)
+local source = radio.RtlSdrSource (157900000, 1000000, {device_index = device_index})
 
 -- Spark: 157.925 MHz
 local spark925_tuner   = radio.TunerBlock (-25000, 12e3, 80)
