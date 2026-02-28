@@ -190,10 +190,10 @@ export default class Client extends React.Component
                     <table>
                         <thead>
                             <tr>
-                                <th scope="col">Received</th>
-                                <th scope="col">Source</th>
-                                <th scope="col">Recipient</th>
-                                <th scope="col">Message</th>
+                                <th className="page_rx_date" scope="col">Received</th>
+                                <th className="page_source" scope="col">Source</th>
+                                <th className="page_recipient" scope="col">Recipient</th>
+                                <th className="page_content" scope="col">Message</th>
                             </tr>
                         </thead>
                         <tbody>

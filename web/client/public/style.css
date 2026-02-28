@@ -42,6 +42,7 @@ header h1 {
     border-radius: 8px;
     margin-bottom: 32px;
     width: 100%;
+    table-layout: fixed;
 }
 
 #page_table tbody tr:nth-child(odd) {
@@ -58,12 +59,15 @@ header h1 {
 
 .page_rx_date, .page_source {
     white-space: nowrap;
+    width: 180px;
 }
 
 .page_recipient {
     cursor: pointer;
     padding-left: 8px !important;
     font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    width: 100px;
 }
 
 .page_recipient:hover {
