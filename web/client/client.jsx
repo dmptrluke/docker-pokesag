@@ -1,6 +1,27 @@
 import React from 'react';
 import { DateTime } from 'luxon';
 
+/**
+ * Hash a string to a consistent HSL color using FNV-1a.
+ * FNV-1a has good avalanche properties — even very similar strings
+ * (e.g. "1140792" vs "1140587") produce wildly different hashes.
+ * Saturation and lightness are also varied using different hash bits.
+ */
+function recipientColor(str) {
+    let h = 0x811c9dc5; // FNV-1a offset basis
+    for (let i = 0; i < str.length; i++) {
+        h ^= str.charCodeAt(i);
+        h = Math.imul(h, 0x01000193); // FNV-1a prime
+    }
+    h = h >>> 0; // unsigned 32-bit
+
+    const hue = h % 360;
+    const sat = 55 + ((h >>> 16) % 4) * 10; // 55, 65, 75, or 85%
+    const lit = 55 + ((h >>> 24) % 3) * 8;  // 55, 63, or 71%
+
+    return `hsl(${hue}, ${sat}%, ${lit}%)`;
+}
+
 export default class Client extends React.Component
 {
     constructor ()
@@ -136,10 +157,12 @@ export default class Client extends React.Component
         /* Get the list of messages */
         let pages = this.state.pages_database.map ( page => {
             const formatted_date = DateTime.fromISO(page.rx_date).toFormat(this.state.date_format);
+            const color = recipientColor(page.recipient);
             return <tr key={page.id}>
                     <td className="page_rx_date">{formatted_date}</td>
                     <td className="page_source">{page.source}</td>
-                    <td className="page_recipient" onClick={() => this.handle_recipient_click (page.recipient)}>{page.recipient}</td>
+                    <td className="page_recipient" onClick={() => this.handle_recipient_click (page.recipient)}
+                        style={{ borderLeft: `3px solid ${color}`, color: color }}>{page.recipient}</td>
                     <td className="page_content">{page.content}</td>
                 </tr>
         });

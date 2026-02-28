@@ -60,9 +60,14 @@ header h1 {
     white-space: nowrap;
 }
 
-.page_recipient:hover {
+.page_recipient {
     cursor: pointer;
-    color: #ffc080;
+    padding-left: 8px !important;
+    font-variant-numeric: tabular-nums;
+}
+
+.page_recipient:hover {
+    filter: brightness(1.3);
 }
 
 .page_content {
