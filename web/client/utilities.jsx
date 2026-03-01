@@ -33,12 +33,11 @@ export function recipientColor(str) {
 let TOOLTIP_REGEX = null;
 let TOOLTIP_MAP = {};
 fetch('/tooltips.json')
-    .then(res => (res.ok ? res.json() : null))
+    .then(res => res.json())
     .then(data => {
-        if (!data) return;
         const map = data.codes || data;
-        TOOLTIP_MAP = map || {};
-        const keys = Object.keys(TOOLTIP_MAP || {}).filter(Boolean);
+        TOOLTIP_MAP = map;
+        const keys = Object.keys(TOOLTIP_MAP).filter(Boolean);
         if (keys.length) {
             const escaped = keys.map(k => k.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&'));
             // match keys (with optional trailing alphabetic suffix (e.g. 21D05M)
