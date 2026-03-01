@@ -21,6 +21,7 @@ import subprocess
 import logging
 
 import psycopg2
+from environs import Env
 
 from gnuradio import gr, blocks, analog, fft
 from gnuradio import filter as gr_filter
@@ -30,19 +31,22 @@ import osmosdr
 # ---------------------------------------------------------------------------
 # Configuration from environment
 # ---------------------------------------------------------------------------
-DB_HOST = os.getenv("DB_HOST", "pokesag_db")
-DB_NAME = os.getenv("DB_NAME", "pokesag")
-DB_USER = os.getenv("DB_USER", "pokesag")
-DB_PASS = os.getenv("DB_PASS", "pokesag")
-DB_PORT = int(os.getenv("DB_PORT", "5432"))
+_env = Env()
+_env.read_env()
 
-DISCARD_SPAM = os.getenv("DISCARD_SPAM", "false").lower() == "true"
-RTL_DEVICE_SERIAL = os.getenv("RTL_DEVICE_SERIAL")
+DB_HOST = _env.str("DB_HOST", "pokesag_db")
+DB_NAME = _env.str("DB_NAME", "pokesag")
+DB_USER = _env.str("DB_USER", "pokesag")
+DB_PASS = _env.str("DB_PASS", "pokesag")
+DB_PORT = _env.int("DB_PORT", 5432)
+
+DISCARD_SPAM = _env.bool("DISCARD_SPAM", False)
+RTL_DEVICE_SERIAL = _env.str("RTL_DEVICE_SERIAL", "")
 
 # ---------------------------------------------------------------------------
 # Channel configuration (loaded from file)
 # ---------------------------------------------------------------------------
-CHANNELS_FILE = os.getenv("CHANNELS_FILE", "/config/channels.json")
+CHANNELS_FILE = _env.str("CHANNELS_FILE", "/config/channels.json")
 
 def _load_config():
     """Load channel definitions from JSON config file.
@@ -106,7 +110,7 @@ TRANSITION_W = 3_000    # Filter transition width (Hz)
 # ---------------------------------------------------------------------------
 # Logging
 # ---------------------------------------------------------------------------
-LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+LOG_LEVEL = _env.str("LOG_LEVEL", "INFO").upper()
 logging.basicConfig(
     level=getattr(logging, LOG_LEVEL, logging.INFO),
     format="%(asctime)s [%(name)s] %(levelname)s  %(message)s",
