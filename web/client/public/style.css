@@ -1,111 +1,274 @@
-/* Layout */
+/* =============================================================================
+   Base & Layout
+   ============================================================================= */
+
 body {
-    color: white;
-    background-color: #282020;
+    color: #f0f0f0;
+    background-color: #111114;
     text-align: center;
     overflow-y: scroll;
+    font-family: -apple-system, BlinkMacSystemFont, avenir next, avenir, segoe ui,
+                 helvetica neue, Adwaita Sans, Cantarell, Ubuntu, roboto, noto,
+                 helvetica, arial, sans-serif;
+    font-size: 0.95rem;
 }
 
+/* Default input/button appearance */
 input, button {
-    color: #c0c0c0;
-    background-color: #404040;
+    color: #f0f0f0;
+    background-color: #2a2a30;
     border: none;
     padding: 16px;
+    font-size: inherit;
+    font-family: inherit;
 }
 
-header, main {
+main {
     margin-left: auto;
     margin-right: auto;
     width: 85%;
 }
 
-@media all and (max-width: 768px) {
-    /* On medium devices, reduce the page margins */
-    header, main {
-        width: 90%;
-    }
+/* Focus ring */
+input:focus, button:focus-visible {
+    outline: 1px solid #fbbf24;
+    outline-offset: -2px;
 }
 
-header {
-    border-bottom: 2px solid #808080;
+/* Visibility helpers */
+.hidden { display: none; }
+.visible { display: block; }
+
+
+/* =============================================================================
+   Toolbar
+   ============================================================================= */
+
+#toolbar {
+    background-color: #1e1e24;
+    margin: 16px 0 12px;
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    border: 1px solid #35353f;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.35);
 }
 
-header h1 {
-    font-size: 2em;
-    margin: 0.67em 0;
+/* Brand / logo lives as first child of #toolbar */
+#brand {
+    padding: 0 20px;
+    font-size: 1.1em;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: #fafafa;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    border-right: 1px solid #35353f;
+    user-select: none;
 }
 
-/* Page Table */
+/* Spacer pushes the transporter to the right */
+#toolbar .spacer {
+    flex-grow: 1;
+    border-right: 1px solid #35353f;
+}
+
+/* Page transporters */
+#transporter {
+    display: flex;
+}
+
+/* No trailing border on the last button of any flex container */
+#toolbar > *:last-child,
+#transporter > *:last-child {
+    border-right: 0;
+}
+
+/* Toolbar & bottom-nav button base */
+#toolbar input, #toolbar button {
+    border-right: 1px solid #35353f;
+    padding-left: 20px;
+    padding-right: 20px;
+    background-color: transparent;
+    transition: color 0.15s, background-color 0.15s;
+}
+
+#toolbar input[type=button]:hover, #toolbar button:hover {
+    color: #fbbf24;
+    background-color: rgba(255,255,255,0.04);
+}
+
+#toolbar input[type=button]:active, #toolbar button:active {
+    color: #f59e0b;
+    background-color: rgba(255,255,255,0.07);
+}
+
+/* Clear-search button — red tint */
+#toolbar button.clear_search {
+    color: #f87171;
+    padding-left: 14px;
+    padding-right: 14px;
+}
+
+#toolbar button.clear_search:hover {
+    color: #fca5a5;
+    background-color: rgba(248, 113, 113, 0.1);
+}
+
+
+/* =============================================================================
+   Settings Panel
+   ============================================================================= */
+
+#settings {
+    background-color: #1e1e24;
+    padding: 8px 4px;
+    border-radius: 10px;
+    margin: 0 auto 10px;
+    width: 100%;
+    border: 1px solid #35353f;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.35);
+}
+
+#settings h4 {
+    color: #a0a0b0;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 2px 0 8px;
+}
+
+.setting {
+    text-align: center;
+    padding: 6px 14px;
+    margin: 4px;
+    border-radius: 6px;
+    font-size: 0.85em;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: filter 0.15s, border-color 0.15s;
+}
+
+.setting:hover {
+    filter: brightness(1.25);
+}
+
+.green {
+    background-color: #14532d;
+    color: #86efac;
+    border-color: #166534;
+}
+
+.red {
+    background-color: #3b1111;
+    color: #fca5a5;
+    border-color: #7f1d1d;
+}
+
+
+/* =============================================================================
+   Message Table
+   ============================================================================= */
+
 #page_table table {
-    background-color: #404040;
+    background-color: #1e1e24;
     border-collapse: separate;
-    border-radius: 8px;
-    margin-bottom: 32px;
+    border-spacing: 0;
+    border-radius: 10px;
+    margin-bottom: 0;
     width: 100%;
     table-layout: fixed;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    overflow: hidden;
 }
 
-#page_table tbody tr:nth-child(odd) {
-    background-color: #505050;
+#page_table thead tr {
+    background-color: #16161c;
 }
 
-#page_table tbody tr:nth-child(even) {
-    background-color: #585858;
+#page_table thead th {
+    padding: 10px 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #a0a0b0;
+    border-bottom: 1px solid #35353f;
 }
+
+#page_table tbody tr:nth-child(odd)  { background-color: #232329; }
+#page_table tbody tr:nth-child(even) { background-color: #1e1e24; }
+#page_table tbody tr:hover           { background-color: #2c2c38; }
 
 #page_table td {
-    padding: 5px;
+    padding: 7px 6px;
+    border-bottom: 1px solid #2a2a32;
 }
 
 .page_rx_date, .page_source {
     white-space: nowrap;
     width: 180px;
+    color: #c0c0d0;
+    font-size: 0.88em;
 }
 
 .page_recipient {
     cursor: pointer;
     padding-left: 8px !important;
     font-variant-numeric: tabular-nums;
+    font-weight: 600;
     white-space: nowrap;
     width: 100px;
 }
 
 .page_recipient:hover {
-    filter: brightness(1.3);
+    filter: brightness(1.35);
 }
 
 .page_content {
     text-align: left;
     overflow-wrap: anywhere;
+    color: #f0f0f0;
+    line-height: 1.45;
 }
 
-/* Hover code badge + tooltip */
+
+/* =============================================================================
+   HoverCode Tooltip
+   ============================================================================= */
+
 .code-badge {
     position: relative;
-    color: #ffc080;
+    color: #fbbf24;
     cursor: help;
-    border-bottom: 1px dotted #ffc080;
+    border-bottom: 1px dotted #fbbf24;
+    font-weight: 500;
 }
 
 .code-badge:hover {
-    color: #ffe0b0;
+    color: #fde68a;
 }
 
+/* Tooltip bubble */
 .code-badge:hover::after {
     content: attr(data-tooltip);
     position: absolute;
     bottom: 125%;
     left: 50%;
     transform: translateX(-50%);
-    background: #222;
-    color: #f0f0f0;
-    padding: 6px 10px;
-    border-radius: 4px;
-    font-size: 0.85em;
+    background: #18181b;
+    color: #f9fafb;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.82em;
     white-space: nowrap;
     z-index: 100;
     pointer-events: none;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.7);
+    border: 1px solid #3f3f46;
 }
 
 /* Tooltip arrow */
@@ -116,47 +279,21 @@ header h1 {
     left: 50%;
     transform: translateX(-50%);
     border: 6px solid transparent;
-    border-top-color: #222;
+    border-top-color: #3f3f46;
     z-index: 100;
     pointer-events: none;
 }
 
-@media all and (max-width: 575px) {
-    /* On small devices, collapse the table */
-    #page_table tr {    
-        display: table;  
-        width:100%;    
-    }               
-    #page_table td {    
-        display: table-row; 
-        text-align: left;
-    }           
-}
-
-/* Toolbar */
-#toolbar {
-    background-color: #404040;
-    margin: 8px 0;
-    border-radius: 8px;
-    overflow: hidden;
-    display: flex;
-}
-
-#transporter { 
-    display: flex;
-}
-
-#toolbar > *:last-child, #transporter > *:last-child {
-    border-right: 0;
-}
-
-#toolbar .spacer {
-    flex-grow: 1;
-    border-right: 2px solid #606060;
-}
+/* =============================================================================
+   Responsive - 768px and below
+   ============================================================================= */
 
 @media all and (max-width: 768px) {
-    /* On medium devices, hide the spacer, and grow the search box instead */
+    main {
+        width: 90%;
+    }
+
+    /* Hide spacer; grow search box to fill the gap */
     #toolbar .spacer {
         display: none;
     }
@@ -165,66 +302,108 @@ header h1 {
         flex-grow: 1;
         min-width: 0;
     }
-}
 
-@media all and (max-width: 575px) {
-    /* On small devices, hide the page number */
-    #page_num {
-        display: none;
+    #brand {
+        font-size: 1em;
+        padding: 0 14px;
     }
 }
 
-#toolbar input, #toolbar button {
-    border-right: 2px solid #606060;
-    padding-left: 24px;
-    padding-right: 24px;
-}
 
-#toolbar input[type=button]:hover, #toolbar button:hover {
-    color: #ffc080;
-}
+/* =============================================================================
+   Responsive - 575px and below (mobile)
+   ============================================================================= */
 
-#toolbar input[type=button]:active, #toolbar button:active  {
-    color: #e0a060;
-}
+@media all and (max-width: 575px) {
+    main {
+        width: 100%;
+    }
 
-/* Settings */
-#settings {
-    background-color: #404040;
-    padding: 2px;
-    border-radius: 8px;
-    margin-left: auto;
-    margin-right: auto;
-    margin-bottom: 8px;
-    width: 100%;
-}
+    /* Toolbar: sticky full-bleed header */
+    #toolbar {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        margin: 0 0 8px;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        border-top: none;
+    }
 
-.setting {
-    text-align: center;
-    padding: 4px;
-    margin: 4px;
-    border-radius: 4px;
-}
+    /* Hide page number - too wide for small screens */
+    #page_num {
+        display: none;
+    }
 
-/* Utility/Tweaks */
-.green {
-    background-color: #506050;
-}
+    /* Table: full-bleed flush cards */
+    #page_table table {
+        border-radius: 0;
+        box-shadow: none;
+    }
 
-.red {
-    background-color: #605050;
-}
+    #page_table thead {
+        display: none;
+    }
 
-.hidden {
-    display: none;
-}
+    /* Each row becomes a two-line flex card */
+    #page_table tbody tr {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        padding: 6px 10px;
+        column-gap: 4px;
+    }
 
-.visible {
-    display: block;
-}
+    #page_table td {
+        display: block;
+        padding: 0;
+        border-bottom: none;
+        width: auto;
+    }
 
-/* TODO: The outline looked bad. What can we use
- *       instead for tabbing through the interface? */
-input:focus {
-    outline: none !important;
+    /* Line 1 left - recipient */
+    .page_recipient {
+        order: 1;
+        flex: 0 0 auto;
+        width: auto;
+        padding-left: 8px !important;
+        font-size: 0.92rem;
+    }
+
+    /* Line 1 right - source, flex-grows to push date to edge */
+    .page_source {
+        order: 2;
+        flex: 1;
+        width: auto;
+        text-align: right;
+        font-size: 0.72rem;
+        color: #6a6a8a;
+        white-space: nowrap;
+    }
+
+    /* Line 1 far right - date */
+    .page_rx_date {
+        order: 3;
+        flex: 0 0 auto;
+        width: auto;
+        font-size: 0.72rem;
+        color: #6a6a8a;
+        white-space: nowrap;
+    }
+
+    .page_rx_date::before {
+        content: " · ";
+        color: #3a3a50;
+    }
+
+    /* Line 2 - message full width */
+    .page_content {
+        order: 4;
+        flex: 0 0 100%;
+        padding-top: 3px;
+        font-size: 0.88rem;
+        line-height: 1.35;
+    }
+
 }
