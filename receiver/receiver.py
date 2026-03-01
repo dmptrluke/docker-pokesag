@@ -41,10 +41,12 @@ DB_PASS = _env.str("DB_PASS", "pokesag")
 DB_PORT = _env.int("DB_PORT", 5432)
 
 DISCARD_SPAM = _env.bool("DISCARD_SPAM", False)
+STATS_INTERVAL = _env.int("STATS_INTERVAL", 30)
 RTL_DEVICE_SERIAL = _env.str("RTL_DEVICE_SERIAL", "")
 
 # ---------------------------------------------------------------------------
 # Channel configuration (loaded from file)
+# having two different configuration sources (env + file) is a bit inelegant
 # ---------------------------------------------------------------------------
 CHANNELS_FILE = _env.str("CHANNELS_FILE", "/config/channels.json")
 
@@ -123,7 +125,7 @@ logging.getLogger("urllib3").setLevel(logging.WARNING)
 logging.getLogger("osmosdr").setLevel(logging.WARNING)
 
 # ---------------------------------------------------------------------------
-# Graceful shutdowns
+# Signal handling for graceful shutdown
 # ---------------------------------------------------------------------------
 running = True
 
@@ -263,16 +265,21 @@ class MultimonChannel:
             "-u",              # heuristically prune unlikely POCSAG
         ] + self._protocols + ["-"]
         log.info("Starting multimon-ng for %s: %s", self.name, " ".join(cmd))
+
         self._proc = subprocess.Popen(
             cmd,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
+
+        # create stdout reader thread
         self._reader = threading.Thread(
-            target=self._read_loop, daemon=True, name=f"mmng-{self.name}",
+            target=self._read_stdout, daemon=True, name=f"mmng-{self.name}",
         )
         self._reader.start()
+
+        # create stderr reader thread
         self._err_reader = threading.Thread(
             target=self._read_stderr, daemon=True, name=f"mmng-err-{self.name}",
         )
@@ -287,7 +294,8 @@ class MultimonChannel:
         """
         return os.dup(self._proc.stdin.fileno())
 
-    def _read_loop(self):
+    def _read_stdout(self):
+        """ This runs in a separate thread and reads multimon-ng stdout (self._reader)"""
         assert self._proc and self._proc.stdout
         for raw in self._proc.stdout:
             line = raw.decode("utf-8", errors="replace").strip()
@@ -296,7 +304,7 @@ class MultimonChannel:
             self._handle(line)
 
     def _read_stderr(self):
-        """Log multimon-ng stderr for diagnostics."""
+        """ This runs in a separate thread and reads multimon-ng stderr (self._err_reader)"""
         assert self._proc and self._proc.stderr
         for raw in self._proc.stderr:
             line = raw.decode("utf-8", errors="replace").strip()
@@ -544,17 +552,17 @@ def main():
     # ---- Start GNURadio flowgraph ----
     radio = None
     try:
+        # Pass the list of multimon-ng stdin fds to the flowgraph, 
+        # which will write audio samples to them directly
         radio = PagerFlowgraph([i.stdin_fd for i in mms])
         log.info("Starting GNURadio flowgraph...")
         radio.start()
         log.info("Flowgraph running — waiting for pages...")
 
-        stats_interval = 30
-
         # main loop: just wait and log stats periodically until interrupted
         # all the work happens in GNURadio and MultimonChannels
         while running:
-            time.sleep(stats_interval)
+            time.sleep(STATS_INTERVAL)
             for instance in mms:
                 instance.log_stats()
 
