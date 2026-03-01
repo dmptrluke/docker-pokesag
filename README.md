@@ -90,6 +90,7 @@ Here is an example configuration for typical New Zealand paging frequencies:
 | `channels[].name` | Display name for the channel (appears in the `source` column). |
 | `channels[].offset_hz` | Offset in Hz from `center_freq` to the channel frequency. |
 | `channels[].protocols` | List of protocols to decode. Supported: `POCSAG512`, `POCSAG1200`, `POCSAG2400`, `FLEX`, `FLEX_NEXT`. |
+| `channels[].discard_spam` | Optional. If `true`, short or known-spam messages are silently discarded for this channel. Defaults to `false`. |
 
 The receiver will refuse to start if `channels.json` is missing or invalid.
 

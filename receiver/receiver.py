@@ -36,7 +36,6 @@ DB_USER = os.getenv("DB_USER", "pokesag")
 DB_PASS = os.getenv("DB_PASS", "pokesag")
 DB_PORT = int(os.getenv("DB_PORT", "5432"))
 
-DISCARD_SPAM = os.getenv("DISCARD_SPAM", "false").lower() == "true"
 RTL_DEVICE_SERIAL = os.getenv("RTL_DEVICE_SERIAL")
 
 # ---------------------------------------------------------------------------
@@ -66,9 +65,10 @@ def _load_config():
         if key not in cfg:
             raise SystemExit(f"Missing required key '{key}' in {CHANNELS_FILE}")
 
-    # Expand protocol lists into multimon-ng -a flags
+    # Expand protocol lists into multimon-ng -a flags and set defaults
     for ch in cfg["channels"]:
         ch["protocols"] = [x for p in ch["protocols"] for x in ("-a", p)]
+        ch.setdefault("discard_spam", False)
     return cfg
 
 _config = _load_config()
@@ -187,8 +187,8 @@ class Database:
         log.info("Database tables ready.")
 
     # -- insert ------------------------------------------------------------
-    def store_page(self, source: str, address: str, content: str):
-        if DISCARD_SPAM and _is_spam(content):
+    def store_page(self, source: str, address: str, content: str, discard_spam: bool = False):
+        if discard_spam and _is_spam(content):
             log.debug("Discarded spam from %s addr=%s", source, address)
             return
         with self._lock:
@@ -241,10 +241,11 @@ class MultimonChannel:
     file_descriptor_sink.
     """
 
-    def __init__(self, name: str, protocols: list, db: Database):
+    def __init__(self, name: str, protocols: list, db: Database, discard_spam: bool = False):
         self.name = name
         self._protocols = protocols
         self._db = db
+        self._discard_spam = discard_spam
         self._proc = None
         self._reader = None
         self._err_reader = None
@@ -324,7 +325,7 @@ class MultimonChannel:
             if content:
                 source = f"{self.name} ({demod})"
                 log.info("PAGE [%s] %s: %s", source, address, content)
-                self._db.store_page(source, address, content)
+                self._db.store_page(source, address, content, self._discard_spam)
                 self._pages_decoded += 1
             return
 
@@ -337,7 +338,7 @@ class MultimonChannel:
                 baud = msg.get("sync_baud", "")
                 source = f"{self.name} (FLEX {baud})"
                 log.info("PAGE [%s] %s: %s", source, capcode, content)
-                self._db.store_page(source, capcode, content)
+                self._db.store_page(source, capcode, content, self._discard_spam)
                 self._pages_decoded += 1
             return
 
@@ -350,7 +351,7 @@ class MultimonChannel:
             if content and msg_type in ("ALN", "NUM"):
                 source = f"{self.name} (FLEX)"
                 log.info("PAGE [%s] %s: %s", source, capcode, content)
-                self._db.store_page(source, capcode, content)
+                self._db.store_page(source, capcode, content, self._discard_spam)
                 self._pages_decoded += 1
             return
 
@@ -362,7 +363,7 @@ class MultimonChannel:
             if content and msg_type in ("ALN", "NUM"):
                 source = f"{self.name} (FLEX)"
                 log.info("PAGE [%s] %s: %s", source, capcode, content)
-                self._db.store_page(source, capcode, content)
+                self._db.store_page(source, capcode, content, self._discard_spam)
                 self._pages_decoded += 1
             return
 
@@ -374,7 +375,7 @@ class MultimonChannel:
             if content:
                 source = f"{self.name} ({demod})"
                 log.info("PAGE [%s] %s: %s", source, address, content)
-                self._db.store_page(source, address, content)
+                self._db.store_page(source, address, content, self._discard_spam)
                 self._pages_decoded += 1
             return
 
@@ -530,7 +531,7 @@ def main():
     # ---- Start multimon-ng subprocesses ----
     mms = []
     for cfg in CHANNELS:
-        mc = MultimonChannel(cfg["name"], cfg["protocols"], db)
+        mc = MultimonChannel(cfg["name"], cfg["protocols"], db, cfg["discard_spam"])
         mc.start()
         fd = mc.stdin_fd
         
