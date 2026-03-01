@@ -29,14 +29,12 @@ services:
     environment:
       TZ: Pacific/Auckland
       # RTL_DEVICE_SERIAL: '00000001'  # Select RTL-SDR by serial number
-      # RTL_DEVICE_INDEX: '0'          # Or select by device index
     devices:
       - /dev/bus/usb:/dev/bus/usb
     privileged: true
     restart: always
     volumes:
       - ./channels.json:/config/channels.json:ro
-      # - ./hoverCodes.json:/code/client/public/hoverCodes.json
 
   web:
     image: ghcr.io/dmptrluke/pokesag-web:latest
@@ -46,6 +44,8 @@ services:
     ports:
       - "8000:8000"
     restart: always
+    volumes:
+      # - ./tooltips.json:/config/tooltips.json:ro
 
 volumes:
   pokesag_db:
@@ -93,18 +93,36 @@ Here is an example configuration for typical New Zealand paging frequencies:
 
 The receiver will refuse to start if `channels.json` is missing or invalid.
 
+## Tooltips
+
+If you have a `tooltips.json` file, you can mount it into the **web** container to enable tooltip annotations on recognised codes in page messages. This file is optional — if not provided, the tooltip system is silently disabled.
+
+Mount it in your compose file:
+
+```yaml
+web:
+  volumes:
+    - ./tooltips.json:/config/tooltips.json:ro
+```
+
+The JSON file should have the following structure:
+
+```json
+{ "codes": { "HAPPY": "The user is happy", "CODE2": "Description" } }
+```
+
 ## RTL-SDR Device Selection
 
-If you have multiple RTL-SDR dongles connected, you can select which one PokéSAG uses via environment variables on the `receiver` container:
+If you have multiple RTL-SDR dongles connected, you can select which one PokéSAG uses via environment variable on the `receiver` container:
 
 | Variable | Description |
 |----------|-------------|
-| `RTL_DEVICE_SERIAL` | Select the RTL-SDR device by its serial number (recommended). |
-| `RTL_DEVICE_INDEX` | Select the RTL-SDR device by index (0-based). |
+| `RTL_DEVICE_SERIAL` | Select the RTL-SDR device by its serial number. |
 
-If neither is set, the receiver defaults to device index 0.
 
-Using `RTL_DEVICE_SERIAL` is recommended over `RTL_DEVICE_INDEX` because device indices can change across reboots, while serial numbers are stable. You can find your dongle's serial number by running `rtl_test` on the host.
+If this is not set, the receiver defaults to device index 0.
+
+You can find your dongle's serial number by running `rtl_test` on the host.
 
 ## Step by Step
 If you're new to Docker, below is a step by step guide to running PokéSAG in Docker. 

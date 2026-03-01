@@ -20,20 +20,19 @@ export function recipientColor(str) {
 
     return `hsl(${hue}, ${sat}%, ${lit}%)`;
 }
+
 /**
  * Hover tooltip system.
  *
- * Load a mapping of tokens -> tooltip text from `public/hoverCodes.json`.
- * The JSON file should be either a mapping object or contain a top-level
- * `codes` object. Example:
- *   { "codes": { "HAPPY": "The User is Happy", "LOLX": "Lots of Love for my Ex" } }
+ * Load a mapping of tokens -> tooltip text from `public/tooltips.json`.
+
  *
  * Any token in the mapping will be matched as a whole word and wrapped with
  * a <span> carrying the tooltip in `data-tooltip`.
  */
 let TOOLTIP_REGEX = null;
 let TOOLTIP_MAP = {};
-fetch('/hoverCodes.json')
+fetch('/tooltips.json')
     .then(res => (res.ok ? res.json() : null))
     .then(data => {
         if (!data) return;

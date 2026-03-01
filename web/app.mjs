@@ -1,4 +1,5 @@
 import { resolve, dirname } from 'path';
+import { readFile } from 'fs/promises';
 import express from 'express';
 import compression from 'compression';
 import { db } from './db.mjs';
@@ -13,6 +14,18 @@ let app = express ();
 let port = process.env.PORT || 8000;
 
 app.use(compression())
+
+// Serve tooltips.json from /config if available, otherwise return an empty object.
+// This allows the file to be mounted as a config volume rather than baked into the image.
+const TOOLTIP_FILE = process.env.TOOLTIP_FILE || '/config/tooltips.json';
+app.get('/tooltips.json', async (_req, res) => {
+    try {
+        const data = await readFile(TOOLTIP_FILE, 'utf8');
+        res.type('application/json').send(data);
+    } catch {
+        res.type('application/json').send('{}');
+    }
+});
 
 app.use (express.static (resolve (__dirname, './client/public'), { 'index': ['index.html'] } ));
 app.use (express.static (resolve (__dirname, './client/dist')));

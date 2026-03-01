@@ -38,7 +38,6 @@ DB_PORT = int(os.getenv("DB_PORT", "5432"))
 
 DISCARD_SPAM = os.getenv("DISCARD_SPAM", "false").lower() == "true"
 RTL_DEVICE_SERIAL = os.getenv("RTL_DEVICE_SERIAL")
-RTL_DEVICE_INDEX = os.getenv("RTL_DEVICE_INDEX")
 
 # ---------------------------------------------------------------------------
 # Channel configuration (loaded from file)
@@ -57,7 +56,10 @@ def _load_channels_config():
             "Set CHANNELS_FILE env var or mount a config at /config/channels.json"
         )
     with open(CHANNELS_FILE) as f:
-        cfg = json.load(f)
+        try:
+            cfg = json.load(f)
+        except json.JSONDecodeError:
+            raise SystemExit(f"Invalid JSON in {CHANNELS_FILE}")
 
     # Basic validation
     for key in ("center_freq", "sample_rate", "channels"):
@@ -127,7 +129,7 @@ running = True
 def _sig_handler(signum, _frame):
     global running
     running = False
-    log.info("Received signal %d — shutting down …", signum)
+    log.info("Received signal %d - shutting down...", signum)
 
 
 signal.signal(signal.SIGTERM, _sig_handler)
@@ -250,7 +252,6 @@ class MultimonChannel:
         self._err_reader = None
         self._pages_decoded = 0
 
-    # ------------------------------------------------------------------
     def start(self):
         cmd = [
             "multimon-ng",
@@ -275,7 +276,6 @@ class MultimonChannel:
         )
         self._err_reader.start()
 
-    # ------------------------------------------------------------------
     @property
     def stdin_fd(self):
         """Return a dup'd file descriptor for GNURadio to write to.
@@ -285,7 +285,6 @@ class MultimonChannel:
         """
         return os.dup(self._proc.stdin.fileno())
 
-    # ------------------------------------------------------------------
     def _read_loop(self):
         assert self._proc and self._proc.stdout
         for raw in self._proc.stdout:
@@ -294,7 +293,6 @@ class MultimonChannel:
                 continue
             self._handle(line)
 
-    # ------------------------------------------------------------------
     def _read_stderr(self):
         """Log multimon-ng stderr for diagnostics."""
         assert self._proc and self._proc.stderr
@@ -303,8 +301,9 @@ class MultimonChannel:
             if line:
                 log.debug("mmng [%s] stderr: %s", self.name, line)
 
-    # ------------------------------------------------------------------
     def _handle(self, line: str):
+        """Handle one line of multimon-ng output, trying JSON first then falling back to text parsing."""
+
         # ---- Try JSON first (FLEX & POCSAG with --json) ----
         try:
             msg = json.loads(line)
@@ -316,7 +315,6 @@ class MultimonChannel:
         # ---- Fallback: plain-text parsing (e.g. FLEX_NEXT) ----
         self._handle_text(line)
 
-    # ------------------------------------------------------------------
     def _handle_json(self, msg: dict):
         demod = msg.get("demod_name", "")
 
@@ -345,7 +343,6 @@ class MultimonChannel:
                 self._pages_decoded += 1
             return
 
-    # ------------------------------------------------------------------
     def _handle_text(self, line: str):
         # FLEX pipe-delimited: FLEX|ts|baud/…|cy.fr|capcode|TYPE|msg
         m = _RE_FLEX_PIPE.match(line)
@@ -383,7 +380,6 @@ class MultimonChannel:
                 self._pages_decoded += 1
             return
 
-    # ------------------------------------------------------------------
     def log_stats(self):
         """Log throughput stats."""
         log.info(
@@ -393,7 +389,6 @@ class MultimonChannel:
             self._proc.poll() is None if self._proc else False,
         )
 
-    # ------------------------------------------------------------------
     def stop(self):
         if self._proc:
             try:
@@ -433,8 +428,6 @@ class PagerFlowgraph(gr.top_block):
         # RTL-SDR source
         if RTL_DEVICE_SERIAL:
             args = f"rtl={RTL_DEVICE_SERIAL}"
-        elif RTL_DEVICE_INDEX:
-            args = f"rtl={RTL_DEVICE_INDEX}"
         else:
             args = "rtl=0"
 
