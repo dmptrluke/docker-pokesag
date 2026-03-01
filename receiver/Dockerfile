@@ -15,7 +15,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     cmake \
     git \
     netcat-openbsd \
-    && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    python3-pip \
+    && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
+    && pip3 install --no-cache-dir --break-system-packages environs
 
 # ---- Build and install multimon-ng from source (latest) ----
 WORKDIR /tmp
