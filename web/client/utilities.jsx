@@ -35,8 +35,7 @@ let TOOLTIP_MAP = {};
 fetch('/tooltips.json')
     .then(res => res.json())
     .then(data => {
-        const map = data.codes || data;
-        TOOLTIP_MAP = map;
+        TOOLTIP_MAP = data.codes || {};
         const keys = Object.keys(TOOLTIP_MAP).filter(Boolean);
         if (keys.length) {
             const escaped = keys.map(k => k.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&'));
