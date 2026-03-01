@@ -1,5 +1,5 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import Client from './client';
 
-ReactDOM.render(<Client />, document.getElementById('root'));
+createRoot(document.getElementById('root')).render(<Client />);

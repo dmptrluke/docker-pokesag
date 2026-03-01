@@ -176,7 +176,7 @@ function create_database ()
 end
 
 function is_spam (content)
-    text_lower = string.lower(content)
+    local text_lower = string.lower(content)
     if string.len(text_lower) < 4 then
         -- very short messages
         return true
@@ -230,16 +230,16 @@ function DBSink:instantiate (name)
 end
 
 function clean_string (s_dirty)
-    local s_clean = ''
+    local chars = {}
 
     for i = 1, #s_dirty do
         local c = s_dirty:sub (i, i)
         if c:byte () >= 32 and c:byte () < 127 then
-            s_clean = s_clean .. c
+            chars[#chars + 1] = c
         end
     end
 
-    return s_clean
+    return table.concat (chars)
 end
 
 function DBSink:process (x)

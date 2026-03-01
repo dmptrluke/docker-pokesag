@@ -232,7 +232,7 @@ export default class Client extends React.Component
                         <i className="bi-list"></i>
                     </button>
                     <input className="search_box" type="text" placeholder="Search…" value={this.state.search_string}
-                           onChange={this.update_search_string} onKeyPress={this.handle_search} aria-label="Search Box" />
+                           onChange={this.update_search_string} onKeyDown={this.handle_search} aria-label="Search Box" />
                     <div className="spacer"></div>
                     <Transporter on_change={this.handle_page_change} page={this.state.page}/>
                 </nav>
