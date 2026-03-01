@@ -1,55 +1,43 @@
-FROM nickblah/luajit:2-lua52compat-luarocks-bookworm
+FROM debian:bookworm-slim
 
+# ---- Install GNURadio + gr-osmosdr + system Python deps ----
+# gnuradio requires a terminal emulator; xterm is the lightest provider.
+# gr-osmosdr provides the osmosdr source block for RTL-SDR.
+# python3-psycopg2 for PostgreSQL access.
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    xterm \
+    gnuradio \
+    gr-osmosdr \
+    python3-psycopg2 \
+    rtl-sdr \
     build-essential \
     cmake \
     git \
-    libusb-1.0-0-dev \
-    libssl-dev \
-    pkg-config \
     netcat-openbsd \
-    libliquid-dev \
-    libvolk2-dev \
-    libfftw3-dev \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Install pgmoon (pure Lua PostgreSQL driver)
+# ---- Build and install multimon-ng from source (latest) ----
 WORKDIR /tmp
-RUN luarocks install pgmoon \
-    && luarocks install luasocket \
-    && luarocks install luaossl
-
-# Install RTL-SDR
-WORKDIR /tmp
-RUN git clone --depth 1 git://git.osmocom.org/rtl-sdr.git \
-    && cd rtl-sdr \
+RUN git clone --depth 1 https://github.com/EliasOenal/multimon-ng.git \
+    && cd multimon-ng \
     && mkdir build
 
-WORKDIR /tmp/rtl-sdr/build
-RUN cmake ../ -DINSTALL_UDEV_RULES=ON -DDETACH_KERNEL_DRIVER=ON \
-    && make \
+WORKDIR /tmp/multimon-ng/build
+RUN cmake .. \
+    && make -j"$(nproc)" \
     && make install \
-    && cp /tmp/rtl-sdr/rtl-sdr.rules /etc/udev/rules.d/ \
-    && ldconfig \
-    && rm -rf /tmp/rtl-sdr
+    && rm -rf /tmp/multimon-ng
 
-# Install LuaRadio
-WORKDIR /tmp
-RUN git clone --depth 1 https://github.com/vsergeev/luaradio.git \
-    && cd luaradio/embed \
-    && make install-lmod \
-    && rm -rf /tmp/luaradio
-
-# Copy receiver code
+# ---- Copy receiver code ----
 WORKDIR /code
-COPY . ./
+COPY . .
 
 ENV DB_HOST=pokesag_db
 ENV DB_NAME=pokesag
 ENV DB_USER=pokesag
 ENV DB_PASS=pokesag
 ENV DB_PORT=5432
-
 ENV DISCARD_SPAM=false
 
-CMD ["/code/wait-for", "db:5432", "--", "luajit", "/code/receiver.lua"]
+CMD ["/code/wait-for", "pokesag_db:5432", "--", "python3", "/code/receiver.py"]

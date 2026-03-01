@@ -1,6 +1,6 @@
 import React from 'react';
 import { DateTime } from 'luxon';
-import { List, XLg, ChevronLeft, ChevronRight, Arrow90degUp, ArrowClockwise } from 'react-bootstrap-icons';
+import { List, XLg, ChevronLeft, ChevronRight, Arrow90degUp, ArrowClockwise, GearFill, X } from 'react-bootstrap-icons';
 import { recipientColor, annotateMessage } from './utilities';
 
 export default class Client extends React.Component
@@ -60,6 +60,10 @@ export default class Client extends React.Component
                 const type = this.state.full_text_search ? 'ft' : 'basic';
                 const query = encodeURIComponent (this.state.search_string);
                 var url = `/pages/search/${type}/${query}/${page}/`;
+                break;
+
+            case 'source':
+                var url = `/pages/search/source/${encodeURIComponent(this.state.search_string)}/${page}/`;
                 break;
 
             case 'normal':
@@ -128,6 +132,12 @@ export default class Client extends React.Component
         });
     }
 
+    handle_source_click = (s) => {
+        this.setState({mode: "source", search_string: s}, () => {
+            this.refresh_clean ();
+        });
+    }
+
     handle_page_change = (page) =>
     {
         this.setState ({page: page}, () => {
@@ -142,24 +152,22 @@ export default class Client extends React.Component
 
     render ()
     {
-        /* Get the list of messages */
         let pages = this.state.pages_database.map ( page => {
             const formatted_date = DateTime.fromISO(page.rx_date).toFormat(this.state.date_format);
             const color = recipientColor(page.recipient);
             return <tr key={page.id}>
                     <td className="page_rx_date">{formatted_date}</td>
-                    <td className="page_source">{page.source}</td>
+                    <td className="page_source" onClick={() => this.handle_source_click(page.source)}>{page.source}</td>
                     <td className="page_recipient" onClick={() => this.handle_recipient_click (page.recipient)}
                         style={{ borderLeft: `3px solid ${color}`, color: color }}>{page.recipient}</td>
                     <td className="page_content">{annotateMessage(page.content)}</td>
                 </tr>
         });
 
-        /* Generate page */
         return <main>
                 <nav id="toolbar">
                     <span id="brand">PokèSAG</span>
-                    <button className={this.state.settings_open ? 'green' : ''} onClick={this.handle_settings_toggle} title="Settings"><List /></button>
+                    <button onClick={this.handle_settings_toggle} title="Settings"><GearFill /></button>
                     <input className="search_box" type="text" placeholder="Search…" value={this.state.search_string}
                            onChange={this.update_search_string} onKeyDown={this.handle_search} aria-label="Search Box" />
                     {this.state.search_string !== '' &&
@@ -169,12 +177,14 @@ export default class Client extends React.Component
                     <Transporter on_change={this.handle_page_change} page={this.state.page} containerId="transporter" />
                 </nav>
 
-                <div id="settings" className={this.state.settings_open ? 'visible' : 'hidden'}>
-                    <h4>Settings</h4>
-                    <SettingButton value="Auto Refresh" default_state={false} action={this.handle_refresh_toggle} />
-                    <SettingButton value="Full Text Search" default_state={true} action={this.handle_search_toggle} />
-                    <SettingButton value="24 Hour Time" default_state={false} action={this.handle_24h_toggle} />
-                </div>
+                {this.state.settings_open &&
+                    <SettingsModal
+                        onClose={this.handle_settings_toggle}
+                        onRefreshToggle={this.handle_refresh_toggle}
+                        onSearchToggle={this.handle_search_toggle}
+                        on24hToggle={this.handle_24h_toggle}
+                    />
+                }
 
                 <div id="page_table">
                     <table>
@@ -195,29 +205,74 @@ export default class Client extends React.Component
     }
 }
 
-class SettingButton extends React.Component {
+class SettingsModal extends React.Component {
     constructor(props) {
         super(props);
-        let stored_state = localStorage.getItem(props.value);
+        this._backdropRef = React.createRef();
+    }
+
+    handleBackdropClick = (e) => {
+        if (e.target === this._backdropRef.current) {
+            this.props.onClose();
+        }
+    }
+
+    componentDidMount() {
+        this._onKeyDown = (e) => {
+            if (e.key === 'Escape') this.props.onClose();
+        };
+        document.addEventListener('keydown', this._onKeyDown);
+    }
+
+    componentWillUnmount() {
+        document.removeEventListener('keydown', this._onKeyDown);
+    }
+
+    render() {
+        return (
+            <div className="modal-backdrop" ref={this._backdropRef} onClick={this.handleBackdropClick}>
+                <div className="modal-dialog">
+                    <div className="modal-header">
+                        <h3>Settings</h3>
+                        <button className="modal-close" onClick={this.props.onClose}><X /></button>
+                    </div>
+                    <div className="modal-body">
+                        <SettingToggle label="Auto Refresh" settingKey="Auto Refresh" defaultState={false} action={this.props.onRefreshToggle} />
+                        <SettingToggle label="Full Text Search" settingKey="Full Text Search" defaultState={true} action={this.props.onSearchToggle} />
+                        <SettingToggle label="24 Hour Time" settingKey="24 Hour Time" defaultState={false} action={this.props.on24hToggle} />
+                    </div>
+                </div>
+            </div>
+        );
+    }
+}
+
+class SettingToggle extends React.Component {
+    constructor(props) {
+        super(props);
+        let stored_state = localStorage.getItem(props.settingKey);
         this.state = {
-            is_active: stored_state ? JSON.parse(stored_state) : props.default_state
+            is_active: stored_state ? JSON.parse(stored_state) : props.defaultState
         };
         this.props.action(this.state.is_active);
     }
 
     handle_click = () => {
-        /* we use a callback here, since setState is asynchronous */
         this.setState({is_active: !this.state.is_active}, () => {
             this.props.action(this.state.is_active);   
-            localStorage.setItem(this.props.value, this.state.is_active);
+            localStorage.setItem(this.props.settingKey, this.state.is_active);
         });
     }
 
     render() {
         return (
-            <input className={this.state.is_active ? 'setting green' : 'setting red'}
-            type="button" value={this.props.value} onClick={this.handle_click}  />
-        )
+            <div className="setting-row" onClick={this.handle_click}>
+                <span className="setting-label">{this.props.label}</span>
+                <span className={this.state.is_active ? 'setting-toggle on' : 'setting-toggle off'}>
+                    <span className="setting-toggle-knob"></span>
+                </span>
+            </div>
+        );
     }
 }
 

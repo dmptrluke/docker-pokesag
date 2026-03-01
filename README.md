@@ -35,7 +35,8 @@ services:
     privileged: true
     restart: always
     volumes:
-      # - ./hoverCodes.json:/code/client/public/hoverCodes.json   # If you have a hoverCodes.json file, place it here. This is not provided with the project.
+      - ./channels.json:/config/channels.json:ro
+      # - ./hoverCodes.json:/code/client/public/hoverCodes.json
 
   web:
     image: ghcr.io/dmptrluke/pokesag-web:latest
@@ -51,6 +52,46 @@ volumes:
 ```
 
 You can also choose to use an external database by omitting the `db` container and using the `DB_HOST`/`DB_NAME`/`DB_USER`/`DB_PASS` environment variables on the `web` and `receiver` containers.
+
+## Channel Configuration
+
+The receiver requires a `channels.json` file that defines the SDR centre frequency, sample rate, and channels to decode. This file must be mounted into the container at `/config/channels.json`.
+
+Here is an example configuration for typical New Zealand paging frequencies:
+
+```json
+{
+  "center_freq": 157900000,
+  "sample_rate": 1000000,
+  "channels": [
+    {
+      "name": "Spark 925",
+      "offset_hz": 25000,
+      "protocols": ["POCSAG512", "POCSAG1200", "FLEX", "FLEX_NEXT"]
+    },
+    {
+      "name": "Spark 950",
+      "offset_hz": 50000,
+      "protocols": ["POCSAG512", "POCSAG1200", "FLEX", "FLEX_NEXT"]
+    },
+    {
+      "name": "Ambulance",
+      "offset_hz": 75000,
+      "protocols": ["POCSAG512", "POCSAG1200", "FLEX", "FLEX_NEXT"]
+    }
+  ]
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `center_freq` | RTL-SDR centre frequency in Hz. |
+| `sample_rate` | SDR sample rate in Hz (typically 1000000). |
+| `channels[].name` | Display name for the channel (appears in the `source` column). |
+| `channels[].offset_hz` | Offset in Hz from `center_freq` to the channel frequency. |
+| `channels[].protocols` | List of protocols to decode. Supported: `POCSAG512`, `POCSAG1200`, `POCSAG2400`, `FLEX`, `FLEX_NEXT`. |
+
+The receiver will refuse to start if `channels.json` is missing or invalid.
 
 ## RTL-SDR Device Selection
 

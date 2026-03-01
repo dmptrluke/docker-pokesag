@@ -49,6 +49,10 @@ GET('/pages/search/ft/:q/:page/', req => db.pages.search (req.params.q, offset (
 GET('/pages/search/basic/:q/', req => db.pages.search_basic (req.params.q));
 GET('/pages/search/basic/:q/:page/', req => db.pages.search_basic (req.params.q, offset (req)));
 
+// Search by source address only, e.g. "1234567890" or "123%". We need this because our legacy DB scheme doesn't index the source field
+GET('/pages/search/source/:q/', req => db.pages.search_source (req.params.q));
+GET('/pages/search/source/:q/:page/', req => db.pages.search_source (req.params.q, offset (req)));
+
 let server = app.listen (port, '::', () => {
     console.log ('Listening on port %s.', server.address ().port);
 });
