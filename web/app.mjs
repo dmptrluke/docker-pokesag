@@ -15,16 +15,18 @@ let port = process.env.PORT || 8000;
 
 app.use(compression())
 
-// Serve tooltips.json from /config if available, otherwise return an empty object.
+// Load tooltips.json once at startup and serve from memory.
 // This allows the file to be mounted as a config volume rather than baked into the image.
+// Falls back to an empty object if the file is missing or unreadable.
 const TOOLTIP_FILE = process.env.TOOLTIP_FILE || '/config/tooltips.json';
-app.get('/tooltips.json', async (_req, res) => {
-    try {
-        const data = await readFile(TOOLTIP_FILE, 'utf8');
-        res.type('application/json').send(data);
-    } catch {
-        res.type('application/json').send('{}');
-    }
+let tooltipsData = '{}';
+try {
+    tooltipsData = await readFile(TOOLTIP_FILE, 'utf8');
+} catch {
+    tooltipsData = '{}';
+}
+app.get('/tooltips.json', (_req, res) => {
+    res.type('application/json').send(tooltipsData);
 });
 
 app.use (express.static (resolve (__dirname, './client/public'), { 'index': ['index.html'] } ));
