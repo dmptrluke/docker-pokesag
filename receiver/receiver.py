@@ -44,7 +44,7 @@ RTL_DEVICE_SERIAL = os.getenv("RTL_DEVICE_SERIAL")
 # ---------------------------------------------------------------------------
 CHANNELS_FILE = os.getenv("CHANNELS_FILE", "/config/channels.json")
 
-def _load_channels_config():
+def _load_config():
     """Load channel definitions from JSON config file.
 
     The config file must exist and contain center_freq, sample_rate,
@@ -65,15 +65,13 @@ def _load_channels_config():
     for key in ("center_freq", "sample_rate", "channels"):
         if key not in cfg:
             raise SystemExit(f"Missing required key '{key}' in {CHANNELS_FILE}")
-    if not cfg["channels"]:
-        raise SystemExit(f"No channels defined in {CHANNELS_FILE}")
 
     # Expand protocol lists into multimon-ng -a flags
     for ch in cfg["channels"]:
         ch["protocols"] = [x for p in ch["protocols"] for x in ("-a", p)]
     return cfg
 
-_config = _load_channels_config()
+_config = _load_config()
 CENTER_FREQ = _config["center_freq"]
 SAMPLE_RATE = _config["sample_rate"]
 CHANNELS    = _config["channels"]
@@ -240,7 +238,7 @@ class MultimonChannel:
     to the database.
 
     GNURadio writes audio directly to the subprocess stdin via a
-    file_descriptor_sink, so there's no Python write() method.
+    file_descriptor_sink.
     """
 
     def __init__(self, name: str, protocols: list, db: Database):
@@ -528,41 +526,46 @@ def main():
         return
     log.info("Connected to database.")
     db.create_tables()
-
-    mmng_channels = []
-    fds = []
+ 
+    # ---- Start multimon-ng subprocesses ----
+    mms = []
     for cfg in CHANNELS:
         mc = MultimonChannel(cfg["name"], cfg["protocols"], db)
         mc.start()
         fd = mc.stdin_fd
-        fds.append(fd)
-        mmng_channels.append(mc)
+        
+        mms.append(mc)
         log.info("multimon-ng for '%s' started, fd=%d", cfg["name"], fd)
 
-    tb = None
+    # ---- Start GNURadio flowgraph ----
+    radio = None
     try:
-        tb = PagerFlowgraph(fds)
+        radio = PagerFlowgraph([i.stdin_fd for i in mms])
         log.info("Starting GNURadio flowgraph...")
-        tb.start()
+        radio.start()
         log.info("Flowgraph running — waiting for pages...")
 
         stats_interval = 30
+
+        # main loop: just wait and log stats periodically until interrupted
+        # all the work happens in GNURadio and MultimonChannels
         while running:
             time.sleep(stats_interval)
-            for mc in mmng_channels:
-                mc.log_stats()
+            for instance in mms:
+                instance.log_stats()
 
     except KeyboardInterrupt:
         log.info("Keyboard interrupt received.")
     except Exception as exc:
         log.error("Fatal error: %s", exc, exc_info=True)
     finally:
+        # Clean up subprocesses and flowgraph on shutdown
         log.info("Shutting down...")
-        if tb:
-            tb.stop()
-            tb.wait()
-        for mc in mmng_channels:
-            mc.stop()
+        if radio:
+            radio.stop()
+            radio.wait()
+        for instance in mms:
+            instance.stop()
         log.info("PokeSAG stopped.")
 
 

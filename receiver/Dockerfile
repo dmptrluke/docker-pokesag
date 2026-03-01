@@ -40,4 +40,4 @@ ENV DB_PASS=pokesag
 ENV DB_PORT=5432
 ENV DISCARD_SPAM=false
 
-CMD ["/code/wait-for", "pokesag_db:5432", "--", "python3", "/code/receiver.py"]
+CMD ["python3", "/code/receiver.py"]
