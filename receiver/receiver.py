@@ -28,6 +28,8 @@ from gnuradio import filter as gr_filter
 from gnuradio.filter import firdes
 import osmosdr
 
+HEARTBEAT_FILE = "/tmp/pokesag_heartbeat"   # touched every stats cycle
+
 # ---------------------------------------------------------------------------
 # Configuration from environment
 # ---------------------------------------------------------------------------
@@ -198,19 +200,25 @@ class Database:
             log.debug("Discarded spam from %s addr=%s", source, address)
             return
         with self._lock:
-            try:
-                with self._conn.cursor() as cur:
-                    cur.execute(
-                        "INSERT INTO pages (rx_date, source, recipient, content) "
-                        "VALUES (NOW(), %s, %s, %s)",
-                        (source, str(address), content),
-                    )
-            except Exception as exc:
-                log.error("DB insert error: %s", exc)
+            for attempt in range(2):
                 try:
-                    self._reconnect()
-                except Exception:
-                    pass
+                    with self._conn.cursor() as cur:
+                        cur.execute(
+                            "INSERT INTO pages (rx_date, source, recipient, content) "
+                            "VALUES (NOW(), %s, %s, %s)",
+                            (source, str(address), content),
+                        )
+                    return  # success
+                except Exception as exc:
+                    if attempt == 0:
+                        log.warning("DB insert error (will retry): %s", exc)
+                        try:
+                            self._reconnect()
+                        except Exception as reconn_exc:
+                            log.error("DB reconnect failed: %s", reconn_exc)
+                            return  # can't reconnect, drop page
+                    else:
+                        log.error("DB insert failed after retry: %s", exc)
 
 
 def _is_spam(content: str) -> bool:
@@ -565,6 +573,11 @@ def main():
             time.sleep(STATS_INTERVAL)
             for instance in mms:
                 instance.log_stats()
+            # Touch heartbeat file so Docker healthcheck can verify we're alive
+            try:
+                open(HEARTBEAT_FILE, "w").close()
+            except OSError:
+                pass
 
     except KeyboardInterrupt:
         log.info("Keyboard interrupt received.")

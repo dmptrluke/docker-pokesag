@@ -42,4 +42,8 @@ ENV DB_PASS=pokesag
 ENV DB_PORT=5432
 ENV DISCARD_SPAM=false
 
+# Healthcheck: verify the heartbeat file was touched within the last 120 seconds
+HEALTHCHECK --start-period=60s --interval=30s --timeout=5s \
+    CMD find /tmp/pokesag_heartbeat -mmin -2 | grep -q . || exit 1
+
 CMD ["python3", "/code/receiver.py"]

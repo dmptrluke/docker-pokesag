@@ -46,6 +46,7 @@ fetch('/tooltips.json')
     .catch(() => {
         // If fetch fails, TOOLTIP_REGEX remains empty and no annotations occur
     });
+    
 /**
  * Annotate message text by replacing recognised tokens with tooltip spans.
  *

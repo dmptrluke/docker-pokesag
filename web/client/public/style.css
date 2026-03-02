@@ -481,3 +481,33 @@ input:focus, button:focus-visible {
     }
 
 }
+
+/* =============================================================================
+   Error Banner
+   ============================================================================= */
+
+.error-banner {
+    background-color: #3b1c1c;
+    border: 1px solid #7f2d2d;
+    color: #f0a0a0;
+    padding: 10px 16px;
+    margin: 0 0 12px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.9rem;
+}
+
+.error-banner button {
+    background-color: #5c2828;
+    color: #f0d0d0;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.error-banner button:hover {
+    background-color: #7f2d2d;
+}

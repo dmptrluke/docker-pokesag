@@ -29,8 +29,8 @@ app.get('/tooltips.json', (_req, res) => {
     res.type('application/json').send(tooltipsData);
 });
 
-app.use (express.static (resolve (__dirname, './client/public'), { 'index': ['index.html'] } ));
-app.use (express.static (resolve (__dirname, './client/dist')));
+app.use (express.static (resolve (__dirname, './client/public'), { index: ['index.html'], maxAge: '1h' }));
+app.use (express.static (resolve (__dirname, './client/dist'), { maxAge: '7d' }));
 
 /* A small wrapper around a app.get handler!
    This abstracts away generic code that is used on all api requests. */
