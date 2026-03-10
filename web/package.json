@@ -25,7 +25,7 @@
     "core-js": "^3.48.0",
     "express": "^5.2.1",
     "luxon": "^3.7.2",
-    "pg": "^8.19.0",
+    "pg": "^8.20.0",
     "pg-promise": "^12.6.1",
     "react": "^19.2.4",
     "react-bootstrap-icons": "^1.11.6",
