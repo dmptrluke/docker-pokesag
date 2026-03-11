@@ -10,25 +10,26 @@ Uses GNURadio for proper DSP signal processing:
 Decoded messages are written to PostgreSQL.
 """
 
-import os
-import time
+import contextlib
 import json
-import re
-import math
-import signal
-import threading
-import subprocess
 import logging
+import math
+import os
+import re
+import signal
+import subprocess
+import threading
+import time
+from pathlib import Path
 
+import osmosdr
 import psycopg2
 from environs import Env
-
-from gnuradio import gr, blocks, analog, fft
+from gnuradio import analog, blocks, fft, gr
 from gnuradio import filter as gr_filter
 from gnuradio.filter import firdes
-import osmosdr
 
-HEARTBEAT_FILE = "/tmp/pokesag_heartbeat"   # touched every stats cycle
+HEARTBEAT_FILE = '/tmp/pokesag_heartbeat'  # touched every stats cycle
 
 # ---------------------------------------------------------------------------
 # Configuration from environment
@@ -36,21 +37,22 @@ HEARTBEAT_FILE = "/tmp/pokesag_heartbeat"   # touched every stats cycle
 _env = Env()
 _env.read_env()
 
-DB_HOST = _env.str("DB_HOST", "pokesag_db")
-DB_NAME = _env.str("DB_NAME", "pokesag")
-DB_USER = _env.str("DB_USER", "pokesag")
-DB_PASS = _env.str("DB_PASS", "pokesag")
-DB_PORT = _env.int("DB_PORT", 5432)
+DB_HOST = _env.str('DB_HOST', 'db')
+DB_NAME = _env.str('DB_NAME', 'pokesag')
+DB_USER = _env.str('DB_USER', 'pokesag')
+DB_PASS = _env.str('DB_PASS', 'pokesag')
+DB_PORT = _env.int('DB_PORT', 5432)
 
-DISCARD_SPAM = _env.bool("DISCARD_SPAM", False)
-STATS_INTERVAL = _env.int("STATS_INTERVAL", 30)
-RTL_DEVICE_SERIAL = _env.str("RTL_DEVICE_SERIAL", "")
+DISCARD_SPAM = _env.bool('DISCARD_SPAM', False)
+STATS_INTERVAL = _env.int('STATS_INTERVAL', 30)
+RTL_DEVICE_SERIAL = _env.str('RTL_DEVICE_SERIAL', '')
 
 # ---------------------------------------------------------------------------
 # Channel configuration (loaded from file)
 # having two different configuration sources (env + file) is a bit inelegant
 # ---------------------------------------------------------------------------
-CHANNELS_FILE = _env.str("CHANNELS_FILE", "/config/channels.json")
+CHANNELS_FILE = _env.str('CHANNELS_FILE', '/config/channels.json')
+
 
 def _load_config():
     """Load channel definitions from JSON config file.
@@ -60,71 +62,71 @@ def _load_config():
     """
     if not os.path.isfile(CHANNELS_FILE):
         raise SystemExit(
-            f"Channel config file not found: {CHANNELS_FILE}\n"
-            "Set CHANNELS_FILE env var or mount a config at /config/channels.json"
+            f'Channel config file not found: {CHANNELS_FILE}\n'
+            'Set CHANNELS_FILE env var or mount a config at /config/channels.json'
         )
     with open(CHANNELS_FILE) as f:
         try:
             cfg = json.load(f)
-        except json.JSONDecodeError:
-            raise SystemExit(f"Invalid JSON in {CHANNELS_FILE}")
+        except json.JSONDecodeError as exc:
+            raise SystemExit(f'Invalid JSON in {CHANNELS_FILE}') from exc
 
     # Basic validation
-    for key in ("center_freq", "sample_rate", "channels"):
+    for key in ('center_freq', 'sample_rate', 'channels'):
         if key not in cfg:
             raise SystemExit(f"Missing required key '{key}' in {CHANNELS_FILE}")
 
     # Expand protocol lists into multimon-ng -a flags
-    for ch in cfg["channels"]:
-        ch["protocols"] = [x for p in ch["protocols"] for x in ("-a", p)]
+    for ch in cfg['channels']:
+        ch['protocols'] = [x for p in ch['protocols'] for x in ('-a', p)]
     return cfg
 
+
 _config = _load_config()
-CENTER_FREQ = _config["center_freq"]
-SAMPLE_RATE = _config["sample_rate"]
-CHANNELS    = _config["channels"]
+CENTER_FREQ = _config['center_freq']
+SAMPLE_RATE = _config['sample_rate']
+CHANNELS = _config['channels']
 
 # ---------------------------------------------------------------------------
 # SDR tuning
 # ---------------------------------------------------------------------------
-AUDIO_RATE  = 22050                # multimon-ng native sample rate
+AUDIO_RATE = 22050  # multimon-ng native sample rate
 
 # Decimation from SAMPLE_RATE → CHANNEL_RATE
 DECIMATION_IQ = 20
-CHANNEL_RATE  = SAMPLE_RATE // DECIMATION_IQ   # 50 000 Hz
+CHANNEL_RATE = SAMPLE_RATE // DECIMATION_IQ  # 50 000 Hz
 
 # Polyphase resample ratio: CHANNEL_RATE → AUDIO_RATE
-from math import gcd as _gcd
-_g = _gcd(AUDIO_RATE, CHANNEL_RATE)
-RESAMPLE_UP   = AUDIO_RATE  // _g       # 441
-RESAMPLE_DOWN = CHANNEL_RATE // _g      # 1000
+_g = math.gcd(AUDIO_RATE, CHANNEL_RATE)
+RESAMPLE_UP = AUDIO_RATE // _g  # 441
+RESAMPLE_DOWN = CHANNEL_RATE // _g  # 1000
 
-# FM discriminator gain: channel_rate / (2π × max_deviation)
-# POCSAG uses ±4.5 kHz deviation
+# FM discriminator gain: channel_rate / (2*pi * max_deviation)
+# POCSAG uses +/-4.5 kHz deviation
 FM_DEVIATION = 4_500
-DEMOD_GAIN = CHANNEL_RATE / (2.0 * math.pi * FM_DEVIATION)   # ≈ 1.77
+DEMOD_GAIN = CHANNEL_RATE / (2.0 * math.pi * FM_DEVIATION)  # ≈ 1.77
 
 # Audio scaling for int16 output (≈ half of int16 max, matches rtl_fm)
 AUDIO_SCALE = 16384.0
 
 # Channel filter parameters
-CHANNEL_BW   = 12_500   # Channel bandwidth (Hz)
-TRANSITION_W = 3_000    # Filter transition width (Hz)
+CHANNEL_BW = 12_500  # Channel bandwidth (Hz)
+TRANSITION_W = 3_000  # Filter transition width (Hz)
 
 # ---------------------------------------------------------------------------
 # Logging
 # ---------------------------------------------------------------------------
-LOG_LEVEL = _env.str("LOG_LEVEL", "INFO").upper()
+LOG_LEVEL = _env.str('LOG_LEVEL', 'INFO').upper()
 logging.basicConfig(
     level=getattr(logging, LOG_LEVEL, logging.INFO),
-    format="%(asctime)s [%(name)s] %(levelname)s  %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
+    format='%(asctime)s [%(name)s] %(levelname)s  %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
 )
-log = logging.getLogger("pokesag")
+log = logging.getLogger('pokesag')
 
 # Reduce noise from libraries
-logging.getLogger("urllib3").setLevel(logging.WARNING)
-logging.getLogger("osmosdr").setLevel(logging.WARNING)
+logging.getLogger('urllib3').setLevel(logging.WARNING)
+logging.getLogger('osmosdr').setLevel(logging.WARNING)
 
 # ---------------------------------------------------------------------------
 # Signal handling for graceful shutdown
@@ -135,7 +137,7 @@ running = True
 def _sig_handler(signum, _frame):
     global running
     running = False
-    log.info("Received signal %d - shutting down...", signum)
+    log.info('Received signal %d - shutting down...', signum)
 
 
 signal.signal(signal.SIGTERM, _sig_handler)
@@ -153,8 +155,11 @@ class Database:
     # -- connection --------------------------------------------------------
     def connect(self):
         self._conn = psycopg2.connect(
-            host=DB_HOST, port=DB_PORT,
-            database=DB_NAME, user=DB_USER, password=DB_PASS,
+            host=DB_HOST,
+            port=DB_PORT,
+            database=DB_NAME,
+            user=DB_USER,
+            password=DB_PASS,
         )
         self._conn.autocommit = True
 
@@ -192,40 +197,39 @@ class Database:
             cur.execute("""
                 CREATE INDEX IF NOT EXISTS search_idx ON pages USING GIN (tsx)
             """)
-        log.info("Database tables ready.")
+        log.info('Database tables ready.')
 
     # -- insert ------------------------------------------------------------
     def store_page(self, source: str, address: str, content: str):
         if DISCARD_SPAM and _is_spam(content):
-            log.debug("Discarded spam from %s addr=%s", source, address)
+            log.debug('Discarded spam from %s addr=%s', source, address)
             return
         with self._lock:
             for attempt in range(2):
                 try:
                     with self._conn.cursor() as cur:
                         cur.execute(
-                            "INSERT INTO pages (rx_date, source, recipient, content) "
-                            "VALUES (NOW(), %s, %s, %s)",
+                            'INSERT INTO pages (rx_date, source, recipient, content) VALUES (NOW(), %s, %s, %s)',
                             (source, str(address), content),
                         )
                     return  # success
                 except Exception as exc:
                     if attempt == 0:
-                        log.warning("DB insert error (will retry): %s", exc)
+                        log.warning('DB insert error (will retry): %s', exc)
                         try:
                             self._reconnect()
                         except Exception as reconn_exc:
-                            log.error("DB reconnect failed: %s", reconn_exc)
+                            log.error('DB reconnect failed: %s', reconn_exc)
                             return  # can't reconnect, drop page
                     else:
-                        log.error("DB insert failed after retry: %s", exc)
+                        log.error('DB insert failed after retry: %s', exc)
 
 
 def _is_spam(content: str) -> bool:
     t = content.lower().strip()
     if len(t) < 4:
         return True
-    if "ha/modica" in t or "this is a test periodic" in t:
+    if 'ha/modica' in t or 'this is a test periodic' in t:
         return True
     return False
 
@@ -233,15 +237,11 @@ def _is_spam(content: str) -> bool:
 # =========================================================================
 # multimon-ng subprocess wrapper
 # =========================================================================
-_RE_FLEX_PIPE = re.compile(
-    r"^FLEX\|[^|]*\|[^|]*\|[^|]*\|(\d+)\|([A-Z]+)\|(.*)"
-)
-_RE_FLEX_SPACE = re.compile(
-    r"^FLEX(?:_NEXT)?:\s+.*\[(\d+)\]\s+(\w+)\s+(.*)"
-)
+_RE_FLEX_PIPE = re.compile(r'^FLEX\|[^|]*\|[^|]*\|[^|]*\|(\d+)\|([A-Z]+)\|(.*)')
+_RE_FLEX_SPACE = re.compile(r'^FLEX(?:_NEXT)?:\s+.*\[(\d+)\]\s+(\w+)\s+(.*)')
 _RE_POCSAG = re.compile(
-    r"^(POCSAG\d+):\s+Address:\s+(\d+)\s+Function:\s+\d+\s+"
-    r"(?:Alpha|Numeric):\s*(.*)"
+    r'^(POCSAG\d+):\s+Address:\s+(\d+)\s+Function:\s+\d+\s+'
+    r'(?:Alpha|Numeric):\s*(.*)'
 )
 
 
@@ -266,13 +266,16 @@ class MultimonChannel:
 
     def start(self):
         cmd = [
-            "multimon-ng",
-            "-t", "raw",
-            "--json",          # structured output for FLEX & POCSAG
-            "-e",              # hide empty POCSAG messages
-            "-u",              # heuristically prune unlikely POCSAG
-        ] + self._protocols + ["-"]
-        log.info("Starting multimon-ng for %s: %s", self.name, " ".join(cmd))
+            'multimon-ng',
+            '-t',
+            'raw',
+            '--json',  # structured output for FLEX & POCSAG
+            '-e',  # hide empty POCSAG messages
+            '-u',  # heuristically prune unlikely POCSAG
+            *self._protocols,
+            '-',
+        ]
+        log.info('Starting multimon-ng for %s: %s', self.name, ' '.join(cmd))
 
         self._proc = subprocess.Popen(
             cmd,
@@ -283,13 +286,17 @@ class MultimonChannel:
 
         # create stdout reader thread
         self._reader = threading.Thread(
-            target=self._read_stdout, daemon=True, name=f"mmng-{self.name}",
+            target=self._read_stdout,
+            daemon=True,
+            name=f'mmng-{self.name}',
         )
         self._reader.start()
 
         # create stderr reader thread
         self._err_reader = threading.Thread(
-            target=self._read_stderr, daemon=True, name=f"mmng-err-{self.name}",
+            target=self._read_stderr,
+            daemon=True,
+            name=f'mmng-err-{self.name}',
         )
         self._err_reader.start()
 
@@ -303,21 +310,21 @@ class MultimonChannel:
         return os.dup(self._proc.stdin.fileno())
 
     def _read_stdout(self):
-        """ This runs in a separate thread and reads multimon-ng stdout (self._reader)"""
+        """This runs in a separate thread and reads multimon-ng stdout (self._reader)"""
         assert self._proc and self._proc.stdout
         for raw in self._proc.stdout:
-            line = raw.decode("utf-8", errors="replace").strip()
+            line = raw.decode('utf-8', errors='replace').strip()
             if not line:
                 continue
             self._handle(line)
 
     def _read_stderr(self):
-        """ This runs in a separate thread and reads multimon-ng stderr (self._err_reader)"""
+        """This runs in a separate thread and reads multimon-ng stderr (self._err_reader)"""
         assert self._proc and self._proc.stderr
         for raw in self._proc.stderr:
-            line = raw.decode("utf-8", errors="replace").strip()
+            line = raw.decode('utf-8', errors='replace').strip()
             if line:
-                log.debug("mmng [%s] stderr: %s", self.name, line)
+                log.debug('mmng [%s] stderr: %s', self.name, line)
 
     def _handle(self, line: str):
         """Handle one line of multimon-ng output, trying JSON first then falling back to text parsing."""
@@ -334,29 +341,29 @@ class MultimonChannel:
         self._handle_text(line)
 
     def _handle_json(self, msg: dict):
-        demod = msg.get("demod_name", "")
+        demod = msg.get('demod_name', '')
 
         # POCSAG
-        if demod.startswith("POCSAG"):
-            address = str(msg.get("address", ""))
-            content = msg.get("alpha") or msg.get("numeric") or ""
+        if demod.startswith('POCSAG'):
+            address = str(msg.get('address', ''))
+            content = msg.get('alpha') or msg.get('numeric') or ''
             content = _clean(content)
             if content:
-                source = f"{self.name} ({demod})"
-                log.info("PAGE [%s] %s: %s", source, address, content)
+                source = f'{self.name} ({demod})'
+                log.info('PAGE [%s] %s: %s', source, address, content)
                 self._db.store_page(source, address, content)
                 self._pages_decoded += 1
             return
 
         # FLEX (flex_alphanumeric, flex_numeric, flex_tone_only)
-        if demod.startswith("flex"):
-            capcode = str(msg.get("capcode", ""))
-            content = msg.get("message", "")
+        if demod.startswith('flex'):
+            capcode = str(msg.get('capcode', ''))
+            content = msg.get('message', '')
             content = _clean(content)
             if content:
-                baud = msg.get("sync_baud", "")
-                source = f"{self.name} (FLEX {baud})"
-                log.info("PAGE [%s] %s: %s", source, capcode, content)
+                baud = msg.get('sync_baud', '')
+                source = f'{self.name} (FLEX {baud})'
+                log.info('PAGE [%s] %s: %s', source, capcode, content)
                 self._db.store_page(source, capcode, content)
                 self._pages_decoded += 1
             return
@@ -367,9 +374,9 @@ class MultimonChannel:
         if m:
             capcode, msg_type, content = m.group(1), m.group(2), m.group(3)
             content = _clean(content)
-            if content and msg_type in ("ALN", "NUM"):
-                source = f"{self.name} (FLEX)"
-                log.info("PAGE [%s] %s: %s", source, capcode, content)
+            if content and msg_type in ('ALN', 'NUM'):
+                source = f'{self.name} (FLEX)'
+                log.info('PAGE [%s] %s: %s', source, capcode, content)
                 self._db.store_page(source, capcode, content)
                 self._pages_decoded += 1
             return
@@ -379,9 +386,9 @@ class MultimonChannel:
         if m:
             capcode, msg_type, content = m.group(1), m.group(2), m.group(3)
             content = _clean(content)
-            if content and msg_type in ("ALN", "NUM"):
-                source = f"{self.name} (FLEX)"
-                log.info("PAGE [%s] %s: %s", source, capcode, content)
+            if content and msg_type in ('ALN', 'NUM'):
+                source = f'{self.name} (FLEX)'
+                log.info('PAGE [%s] %s: %s', source, capcode, content)
                 self._db.store_page(source, capcode, content)
                 self._pages_decoded += 1
             return
@@ -392,8 +399,8 @@ class MultimonChannel:
             demod, address, content = m.group(1), m.group(2), m.group(3)
             content = _clean(content)
             if content:
-                source = f"{self.name} ({demod})"
-                log.info("PAGE [%s] %s: %s", source, address, content)
+                source = f'{self.name} ({demod})'
+                log.info('PAGE [%s] %s: %s', source, address, content)
                 self._db.store_page(source, address, content)
                 self._pages_decoded += 1
             return
@@ -401,26 +408,23 @@ class MultimonChannel:
     def log_stats(self):
         """Log throughput stats."""
         log.info(
-            "MMNG [%s] %d pages decoded, pid=%s alive=%s",
-            self.name, self._pages_decoded,
-            self._proc.pid if self._proc else "?",
+            'MMNG [%s] %d pages decoded, pid=%s alive=%s',
+            self.name,
+            self._pages_decoded,
+            self._proc.pid if self._proc else '?',
             self._proc.poll() is None if self._proc else False,
         )
 
     def stop(self):
         if self._proc:
-            try:
+            with contextlib.suppress(Exception):
                 self._proc.stdin.close()
-            except Exception:
-                pass
             try:
                 self._proc.terminate()
                 self._proc.wait(timeout=5)
             except Exception:
-                try:
+                with contextlib.suppress(Exception):
                     self._proc.kill()
-                except Exception:
-                    pass
             self._proc = None
 
 
@@ -441,46 +445,47 @@ class PagerFlowgraph(gr.top_block):
     """
 
     def __init__(self, channel_fds):
-        gr.top_block.__init__(self, "PokeSAG Receiver")
+        gr.top_block.__init__(self, 'PokeSAG Receiver')
 
         # RTL-SDR source
         if RTL_DEVICE_SERIAL:
-            args = f"rtl={RTL_DEVICE_SERIAL}"
+            args = f'rtl={RTL_DEVICE_SERIAL}'
         else:
-            args = "rtl=0"
+            args = 'rtl=0'
 
-        log.info("Opening RTL-SDR: args=%s", args)
+        log.info('Opening RTL-SDR: args=%s', args)
         self.src = osmosdr.source(args=args)
         self.src.set_sample_rate(SAMPLE_RATE)
         self.src.set_center_freq(CENTER_FREQ)
-        self.src.set_gain_mode(True, 0)      # AGC
+        self.src.set_gain_mode(True, 0)  # AGC
         self.src.set_if_gain(20, 0)
         self.src.set_bb_gain(20, 0)
         log.info(
-            "SDR configured: %.3f MHz centre, %d Hz bandwidth, AGC on",
-            CENTER_FREQ / 1e6, SAMPLE_RATE,
+            'SDR configured: %.3f MHz centre, %d Hz bandwidth, AGC on',
+            CENTER_FREQ / 1e6,
+            SAMPLE_RATE,
         )
 
         # Per-channel DSP chains
-        for cfg, fd in zip(CHANNELS, channel_fds):
-            name = cfg["name"]
-            offset = cfg["offset_hz"]
+        for cfg, fd in zip(CHANNELS, channel_fds, strict=True):
+            name = cfg['name']
+            offset = cfg['offset_hz']
 
             # Low-pass channel filter taps at input sample rate
             taps = firdes.low_pass(
-                1.0,             # gain
-                SAMPLE_RATE,     # sampling rate
-                CHANNEL_BW,      # cutoff = 12.5 kHz
-                TRANSITION_W,    # transition width = 3 kHz
+                1.0,  # gain
+                SAMPLE_RATE,  # sampling rate
+                CHANNEL_BW,  # cutoff = 12.5 kHz
+                TRANSITION_W,  # transition width = 3 kHz
                 fft.window.WIN_HAMMING,
             )
 
             # Freq xlating FIR filter: shift + LPF + decimate in one block
             xlat = gr_filter.freq_xlating_fir_filter_ccf(
-                DECIMATION_IQ,   # decimation factor
-                taps,            # filter taps
-                offset,          # center freq to select (offset from LO)
-                SAMPLE_RATE,     # input sample rate
+                DECIMATION_IQ,  # decimation factor
+                taps,  # filter taps
+                offset,  # center freq to select (offset from LO)
+                SAMPLE_RATE,  # input sample rate
             )
 
             # FM quadrature demodulator
@@ -488,8 +493,8 @@ class PagerFlowgraph(gr.top_block):
 
             # Rational resampler: 50 kHz → 22050 Hz
             resamp = gr_filter.rational_resampler_fff(
-                interpolation=RESAMPLE_UP,     # 441
-                decimation=RESAMPLE_DOWN,       # 1000
+                interpolation=RESAMPLE_UP,  # 441
+                decimation=RESAMPLE_DOWN,  # 1000
             )
 
             # Float → signed 16-bit PCM with scaling
@@ -502,70 +507,78 @@ class PagerFlowgraph(gr.top_block):
             self.connect(self.src, xlat, quad, resamp, f2s, sink)
 
             log.info(
-                "Channel '%s': %.3f MHz (offset %+d Hz), fd=%d, "
-                "demod_gain=%.3f, scale=%.0f",
-                name, (CENTER_FREQ + offset) / 1e6, offset, fd,
-                DEMOD_GAIN, AUDIO_SCALE,
+                "Channel '%s': %.3f MHz (offset %+d Hz), fd=%d, demod_gain=%.3f, scale=%.0f",
+                name,
+                (CENTER_FREQ + offset) / 1e6,
+                offset,
+                fd,
+                DEMOD_GAIN,
+                AUDIO_SCALE,
             )
 
 
 def _clean(s: str) -> str:
-    """Keep only printable ASCII (0x20–0x7E) and strip multimon-ng
+    """Keep only printable ASCII (0x20-0x7E) and strip multimon-ng
     control-character markers like <ETX>."""
-    s = re.sub(r"<ETX>", "", s)
-    return "".join(c for c in s if 32 <= ord(c) < 127).strip()
+    s = re.sub(r'<ETX>', '', s)
+    return ''.join(c for c in s if 32 <= ord(c) < 127).strip()
 
 
 def main():
     global running
 
-    log.info("PokeSAG Receiver starting (GNURadio backend)")
+    log.info('PokeSAG Receiver starting (GNURadio backend)')
     log.info(
-        "DSP config: centre=%.3f MHz  sdr_rate=%d  channel_rate=%d  "
-        "audio_rate=%d  demod_gain=%.3f  audio_scale=%.0f",
-        CENTER_FREQ / 1e6, SAMPLE_RATE, CHANNEL_RATE,
-        AUDIO_RATE, DEMOD_GAIN, AUDIO_SCALE,
+        'DSP config: centre=%.3f MHz  sdr_rate=%d  channel_rate=%d  audio_rate=%d  demod_gain=%.3f  audio_scale=%.0f',
+        CENTER_FREQ / 1e6,
+        SAMPLE_RATE,
+        CHANNEL_RATE,
+        AUDIO_RATE,
+        DEMOD_GAIN,
+        AUDIO_SCALE,
     )
     log.info(
-        "Resample: %d/%d (%.4f)  channels=%d",
-        RESAMPLE_UP, RESAMPLE_DOWN,
-        RESAMPLE_UP / RESAMPLE_DOWN, len(CHANNELS),
+        'Resample: %d/%d (%.4f)  channels=%d',
+        RESAMPLE_UP,
+        RESAMPLE_DOWN,
+        RESAMPLE_UP / RESAMPLE_DOWN,
+        len(CHANNELS),
     )
 
     # ---- Wait for database ----
     db = Database()
-    log.info("Waiting for database...")
+    log.info('Waiting for database...')
     while running:
         try:
             db.connect()
             break
         except Exception as exc:
-            log.warning("DB not ready: %s", exc)
+            log.warning('DB not ready: %s', exc)
             time.sleep(2)
     if not running:
         return
-    log.info("Connected to database.")
+    log.info('Connected to database.')
     db.create_tables()
- 
+
     # ---- Start multimon-ng subprocesses ----
     mms = []
     for cfg in CHANNELS:
-        mc = MultimonChannel(cfg["name"], cfg["protocols"], db)
+        mc = MultimonChannel(cfg['name'], cfg['protocols'], db)
         mc.start()
         fd = mc.stdin_fd
-        
+
         mms.append(mc)
-        log.info("multimon-ng for '%s' started, fd=%d", cfg["name"], fd)
+        log.info("multimon-ng for '%s' started, fd=%d", cfg['name'], fd)
 
     # ---- Start GNURadio flowgraph ----
     radio = None
     try:
-        # Pass the list of multimon-ng stdin fds to the flowgraph, 
+        # Pass the list of multimon-ng stdin fds to the flowgraph,
         # which will write audio samples to them directly
         radio = PagerFlowgraph([i.stdin_fd for i in mms])
-        log.info("Starting GNURadio flowgraph...")
+        log.info('Starting GNURadio flowgraph...')
         radio.start()
-        log.info("Flowgraph running — waiting for pages...")
+        log.info('Flowgraph running — waiting for pages...')
 
         # main loop: just wait and log stats periodically until interrupted
         # all the work happens in GNURadio and MultimonChannels
@@ -574,25 +587,23 @@ def main():
             for instance in mms:
                 instance.log_stats()
             # Touch heartbeat file so Docker healthcheck can verify we're alive
-            try:
-                open(HEARTBEAT_FILE, "w").close()
-            except OSError:
-                pass
+            with contextlib.suppress(OSError):
+                Path(HEARTBEAT_FILE).touch()
 
     except KeyboardInterrupt:
-        log.info("Keyboard interrupt received.")
+        log.info('Keyboard interrupt received.')
     except Exception as exc:
-        log.error("Fatal error: %s", exc, exc_info=True)
+        log.error('Fatal error: %s', exc, exc_info=True)
     finally:
         # Clean up subprocesses and flowgraph on shutdown
-        log.info("Shutting down...")
+        log.info('Shutting down...')
         if radio:
             radio.stop()
             radio.wait()
         for instance in mms:
             instance.stop()
-        log.info("PokeSAG stopped.")
+        log.info('PokeSAG stopped.')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
