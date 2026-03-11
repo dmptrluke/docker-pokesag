@@ -1,21 +1,49 @@
 version: 2
 updates:
-  - package-ecosystem: "npm"
+  - package-ecosystem: npm
     directory: "/web"
     schedule:
-      interval: "weekly"
+      interval: weekly
+      time: "09:00"
+      timezone: Pacific/Auckland
+    groups:
+      npm-minor-patch:
+        update-types:
+          - minor
+          - patch
 
-  - package-ecosystem: "docker"
+  - package-ecosystem: docker
     directory: "/receiver"
     schedule:
-      interval: "weekly"
+      interval: weekly
+      time: "09:00"
+      timezone: Pacific/Auckland
+    groups:
+      docker-minor-patch:
+        update-types:
+          - minor
+          - patch
 
-  - package-ecosystem: "docker"
+  - package-ecosystem: docker
     directory: "/web"
     schedule:
-      interval: "weekly"
+      interval: weekly
+      time: "09:00"
+      timezone: Pacific/Auckland
+    groups:
+      docker-minor-patch:
+        update-types:
+          - minor
+          - patch
 
-  - package-ecosystem: "github-actions"
+  - package-ecosystem: github-actions
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: weekly
+      time: "09:00"
+      timezone: Pacific/Auckland
+    groups:
+      actions-minor-patch:
+        update-types:
+          - minor
+          - patch
