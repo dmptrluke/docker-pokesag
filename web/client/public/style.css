@@ -280,6 +280,8 @@ input:focus, button:focus-visible {
 .page_source {
     white-space: nowrap;
     width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
     color: #c0c0d0;
     font-size: 0.88em;
     cursor: pointer;

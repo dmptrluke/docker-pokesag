@@ -1,39 +1,26 @@
 {
-  "name": "pokesag_webapp",
-  "version": "1.0.0",
-  "description": "WebApp component of PokéSAG",
-  "author": "Joppy Furr",
-  "license": "MIT",
-  "main": "app.js",
-  "browserslist": [
-    "defaults",
-    "not IE 11"
-  ],
-  "scripts": {
-    "build-development": "npx webpack --mode=development --config client/webpack.config.js",
-    "build-production": "npx webpack --mode=production --config client/webpack.config.js",
-    "start": "node app.mjs"
-  },
-  "dependencies": {
-    "@babel/cli": "^7.28.6",
-    "@babel/core": "^7.29.0",
-    "@babel/plugin-proposal-class-properties": "^7.18.6",
-    "@babel/preset-env": "^7.29.0",
-    "@babel/preset-react": "^7.28.5",
-    "babel-loader": "^10.0.0",
-    "compression": "^1.8.1",
-    "core-js": "^3.48.0",
-    "express": "^5.2.1",
-    "luxon": "^3.7.2",
-    "pg": "^8.19.0",
-    "pg-promise": "^12.6.2",
-    "react": "^19.2.4",
-    "react-bootstrap-icons": "^1.11.6",
-    "react-dom": "^19.2.4",
-    "webpack": "^5.105.3",
-    "webpack-cli": "^6.0.1"
-  },
-  "overrides": {
-    "serialize-javascript": "^7.0.3"
-  }
+    "name": "pokesag_webapp",
+    "version": "1.0.0",
+    "description": "WebApp component of PokéSAG",
+    "author": "Joppy Furr",
+    "license": "MIT",
+    "main": "app.mjs",
+    "scripts": {
+        "build-development": "esbuild client/main.jsx --bundle --outfile=client/dist/main.js --sourcemap --jsx=automatic",
+        "build-production": "esbuild client/main.jsx --bundle --outfile=client/dist/main.js --sourcemap --minify --jsx=automatic",
+        "start": "node app.mjs"
+    },
+    "dependencies": {
+        "compression": "^1.8.1",
+        "express": "^5.2.1",
+        "luxon": "^3.7.2",
+        "pg": "^8.19.0",
+        "pg-promise": "^12.6.2",
+        "react": "^19.2.4",
+        "react-bootstrap-icons": "^1.11.6",
+        "react-dom": "^19.2.4"
+    },
+    "devDependencies": {
+        "esbuild": "^0.25.0"
+    }
 }
