@@ -65,17 +65,17 @@ Here is an example configuration for typical New Zealand paging frequencies:
   "sample_rate": 1000000,
   "channels": [
     {
-      "name": "Spark 925",
+      "name": "NZ 925",
       "offset_hz": 25000,
       "protocols": ["POCSAG512", "POCSAG1200", "FLEX", "FLEX_NEXT"]
     },
     {
-      "name": "Spark 950",
+      "name": "NZ 950",
       "offset_hz": 50000,
       "protocols": ["POCSAG512", "POCSAG1200", "FLEX", "FLEX_NEXT"]
     },
     {
-      "name": "Ambulance",
+      "name": "NZ 975",
       "offset_hz": 75000,
       "protocols": ["POCSAG512", "POCSAG1200", "FLEX", "FLEX_NEXT"]
     }

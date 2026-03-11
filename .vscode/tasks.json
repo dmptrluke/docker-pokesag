@@ -1,0 +1,12 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Start Dev Server",
+            "type": "shell",
+            "command": "docker compose up --build web",
+            "problemMatcher": [],
+            "group": "build"
+        }
+    ]
+}

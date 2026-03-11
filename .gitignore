@@ -1,4 +1,6 @@
-/.vscode
+/.vscode/*
+!/.vscode/tasks.json
+!/.vscode/launch.json
 .env
 web/node_modules
 web/client/dist

@@ -35,7 +35,7 @@ RUN cmake .. \
 WORKDIR /code
 COPY . .
 
-ENV DB_HOST=pokesag_db
+ENV DB_HOST=db
 ENV DB_NAME=pokesag
 ENV DB_USER=pokesag
 ENV DB_PASS=pokesag

@@ -1,7 +1,6 @@
-FROM node:20-alpine
+FROM node:22-alpine
 
 ARG BUILD_MODE=production
-ENV NODE_ENV=$BUILD_MODE
 
 WORKDIR /code
 COPY ["package.json", "package-lock.json*", "./"]
@@ -11,7 +10,9 @@ COPY . .
 
 RUN npm run-script build-${BUILD_MODE}
 
-ENV DB_HOST=pokesag_db
+ENV NODE_ENV=$BUILD_MODE
+
+ENV DB_HOST=db
 ENV DB_NAME=pokesag
 ENV DB_USER=pokesag
 ENV DB_PASS=pokesag

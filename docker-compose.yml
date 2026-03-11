@@ -3,12 +3,14 @@
 services:
   db:
     image: postgres:15
+    container_name: pokesag_db
     environment:
       POSTGRES_USER: pokesag
       POSTGRES_PASSWORD: pokesag
 
-  web: 
+  web:
     image: ghcr.io/dmptrluke/pokesag-web:master
+    container_name: pokesag_web
     build:
       context: ./web
       dockerfile: Dockerfile
@@ -16,9 +18,12 @@ services:
         BUILD_MODE: "development"
     ports:
       - "8400:8000"
+    depends_on:
+      - db
 
   receiver:
     image: ghcr.io/dmptrluke/pokesag-receiver:master
+    container_name: pokesag_receiver
     build:
       context: ./receiver
       dockerfile: Dockerfile
@@ -26,7 +31,8 @@ services:
       TZ: 'Pacific/Auckland'
       DISCARD_SPAM: 'true'
       # RTL_DEVICE_SERIAL: ''
-      # RTL_DEVICE_INDEX: '0'
+    depends_on:
+      - db
     devices:
       - /dev/bus/usb:/dev/bus/usb
     privileged: true
