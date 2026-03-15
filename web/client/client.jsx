@@ -1,171 +1,163 @@
 import React from 'react';
 import { DateTime } from 'luxon';
-import {  XLg, ChevronLeft, ChevronRight, Arrow90degUp, ArrowClockwise, GearFill, X } from 'react-bootstrap-icons';
+import { XLg, ChevronLeft, ChevronRight, Arrow90degUp, ArrowClockwise, GearFill, X } from 'react-bootstrap-icons';
 import { recipientColor, annotateMessage } from './utilities';
 import { SETTINGS_DEFS, loadSettings, saveSetting } from './settings';
 
 const AUTO_REFRESH_INTERVAL_MS = 10000;
 
-export default class Client extends React.Component
-{
-    constructor ()
-    {
-        super ();
+export default class Client extends React.Component {
+    constructor() {
+        super();
 
         this.state = {
-            mode: "normal",
-            pages_database: [],
-            search_string: "",
+            mode: 'normal',
+            pages: [],
+            searchString: '',
             page: 1,
-
-            settings_open: false,
+            settingsOpen: false,
             settings: loadSettings(),
-
             error: null,
-
-            refresh_timer: null,
         };
+
+        this._refreshTimer = null;
     }
 
     // -- settings ---------------------------------------------------------
 
-    handleSettingChange = (key, value) =>
-    {
+    handleSettingChange = (key, value) => {
         saveSetting(key, value);
         const settings = { ...this.state.settings, [key]: value };
         this.setState({ settings });
 
-        // initiate or clear auto-refresh timer
         if (key === 'autoRefresh') {
+            this._clearAutoRefresh();
             if (value) {
-                this.setState({ refresh_timer: setInterval(() => this.refresh(), AUTO_REFRESH_INTERVAL_MS) });
-            } else {
-                clearInterval(this.state.refresh_timer);
-                this.setState({ refresh_timer: null });
+                this._refreshTimer = setInterval(() => this.refresh(), AUTO_REFRESH_INTERVAL_MS);
             }
+        }
+    }
+
+    _clearAutoRefresh() {
+        if (this._refreshTimer) {
+            clearInterval(this._refreshTimer);
+            this._refreshTimer = null;
         }
     }
 
     // -- search -----------------------------------------------------------
 
-    updateSearchString = (e) =>
-    {
-        this.setState ( { search_string: e.target.value } );
+    updateSearchString = (e) => {
+        this.setState({ searchString: e.target.value });
 
-        if (e.target.value == '')
-        {
-            this.state.mode = 'normal';
-            this.refresh_clean ();
+        if (e.target.value === '') {
+            this.setState({ mode: 'normal' }, () => {
+                this.refreshClean();
+            });
         }
     }
 
-    handleSearch = (e) =>
-    {
-        if (e.key === 'Enter' && this.state.search_string != '')
-        {
-            this.state.mode = 'search';
-            this.refresh_clean ();
+    handleSearch = (e) => {
+        if (e.key === 'Enter' && this.state.searchString !== '') {
+            this.setState({ mode: 'search' }, () => {
+                this.refreshClean();
+            });
         }
     }
 
-    clearSearch = () =>
-    {
-        this.setState ({ search_string: '', mode: 'normal' }, () => {
-            this.refresh_clean ();
+    clearSearch = () => {
+        this.setState({ searchString: '', mode: 'normal' }, () => {
+            this.refreshClean();
         });
     }
 
     // -- data fetching ----------------------------------------------------
 
-    refresh = () =>
-    {
-        const page = this.state.page;
-        switch (this.state.mode)
-        {
-            case 'search':
-                const type = this.state.settings.fullTextSearch ? 'ft' : 'basic';
-                const query = encodeURIComponent (this.state.search_string);
-                var url = `/pages/search/${type}/${query}/${page}/`;
-                break;
+    refresh = () => {
+        const { page, mode, settings, searchString } = this.state;
+        let url;
 
+        switch (mode) {
+            case 'search': {
+                const type = settings.fullTextSearch ? 'ft' : 'basic';
+                const query = encodeURIComponent(searchString);
+                url = `/pages/search/${type}/${query}/${page}/`;
+                break;
+            }
             case 'source':
-                var url = `/pages/search/source/${encodeURIComponent(this.state.search_string)}/${page}/`;
+                url = `/pages/search/source/${encodeURIComponent(searchString)}/${page}/`;
                 break;
-
             case 'normal':
             default:
-                var url = `/pages/${page}/`;
+                url = `/pages/${page}/`;
         }
 
-        fetch (url)
-            .then (result => result.json ())
-            .then (json => {
+        fetch(url)
+            .then(result => result.json())
+            .then(json => {
                 if (!json.success) {
-                    throw Error (json.error);
+                    throw Error(json.error);
                 }
-                this.setState ({pages_database: json.data, error: null});
+                this.setState({ pages: json.data, error: null });
             })
-            .catch (error => {
-                console.error ('Unable to fetch pages:', error);
-                this.setState ({error: error.message || 'Failed to load pages'});
+            .catch(error => {
+                console.error('Unable to fetch pages:', error);
+                this.setState({ error: error.message || 'Failed to load pages' });
             });
     }
 
-    refresh_clean = () =>
-    {
-        this.setState ({page: 1}, () => {
-            this.refresh ();
+    refreshClean = () => {
+        this.setState({ page: 1 }, () => {
+            this.refresh();
         });
     }
 
     // -- navigation -------------------------------------------------------
 
-    handleSettingsToggle = () =>
-    {
-        this.setState ({ settings_open: !this.state.settings_open });
+    handleSettingsToggle = () => {
+        this.setState(prev => ({ settingsOpen: !prev.settingsOpen }));
     }
 
     handleRecipientClick = (r) => {
-        this.setState({mode: "search", search_string: r}, () => {
-            this.refresh_clean ();
+        this.setState({ mode: 'search', searchString: r }, () => {
+            this.refreshClean();
         });
     }
 
     handleSourceClick = (s) => {
-        this.setState({mode: "source", search_string: s}, () => {
-            this.refresh_clean ();
+        this.setState({ mode: 'source', searchString: s }, () => {
+            this.refreshClean();
         });
     }
 
-    handlePageChange = (page) =>
-    {
-        this.setState ({page: page}, () => {
-            this.refresh ();
+    handlePageChange = (page) => {
+        this.setState({ page }, () => {
+            this.refresh();
         });
     }
 
-    componentDidMount ()
-    {
-        this.refresh ();
+    componentDidMount() {
+        this.refresh();
 
-        // Apply initial auto-refresh if persisted
         if (this.state.settings.autoRefresh) {
-            this.setState({ refresh_timer: setInterval(() => this.refresh(), AUTO_REFRESH_INTERVAL_MS) });
+            this._refreshTimer = setInterval(() => this.refresh(), AUTO_REFRESH_INTERVAL_MS);
         }
     }
 
-    render ()
-    {
-        // settings alias for easier access in JSX
-        const { settings } = this.state;
+    componentWillUnmount() {
+        this._clearAutoRefresh();
+    }
+
+    render() {
+        const { settings, settingsOpen, searchString, error } = this.state;
         const dateFormat = settings.use24hTime ? 'D TT' : 'D tt';
 
-        let pages = this.state.pages_database.map ( page => {
-            const formatted_date = DateTime.fromISO(page.rx_date).toFormat(dateFormat);
+        const rows = this.state.pages.map(page => {
+            const formattedDate = DateTime.fromISO(page.rx_date).toFormat(dateFormat);
             const color = settings.recipientColors ? recipientColor(page.recipient) : undefined;
             const recipientStyle = color ? { borderLeft: `3px solid ${color}`, color } : {};
             return <tr key={page.id}>
-                    <td className="page_rx_date">{formatted_date}</td>
+                    <td className="page_rx_date">{formattedDate}</td>
                     <td className="page_source" onClick={() => this.handleSourceClick(page.source)}>{page.source}</td>
                     <td className="page_recipient" onClick={() => this.handleRecipientClick(page.recipient)}
                         style={recipientStyle}>{page.recipient}</td>
@@ -175,18 +167,18 @@ export default class Client extends React.Component
 
         return <main>
                 <nav id="toolbar">
-                    <span id="brand">PokèSAG</span>
+                    <span id="brand">PokeSAG</span>
                     <button onClick={this.handleSettingsToggle} title="Settings"><GearFill /></button>
-                    <input className="search_box" type="text" placeholder="Search…" value={this.state.search_string}
+                    <input className="search_box" type="text" placeholder="Search..." value={searchString}
                            onChange={this.updateSearchString} onKeyDown={this.handleSearch} aria-label="Search Box" />
-                    {this.state.search_string !== '' &&
+                    {searchString !== '' &&
                         <button className="clear_search" onClick={this.clearSearch} title="Clear search"><XLg /></button>
                     }
                     <div className="spacer"></div>
                     <Transporter onChange={this.handlePageChange} page={this.state.page} containerId="transporter" />
                 </nav>
 
-                {this.state.settings_open &&
+                {settingsOpen &&
                     <SettingsModal
                         settings={settings}
                         onSettingChange={this.handleSettingChange}
@@ -194,9 +186,9 @@ export default class Client extends React.Component
                     />
                 }
 
-                {this.state.error &&
+                {error &&
                     <div className="error-banner" role="alert">
-                        <span>Unable to load pages: {this.state.error}</span>
+                        <span>Unable to load pages: {error}</span>
                         <button onClick={() => this.refresh()} title="Retry">Retry</button>
                     </div>
                 }
@@ -212,7 +204,7 @@ export default class Client extends React.Component
                             </tr>
                         </thead>
                         <tbody>
-                            {pages}
+                            {rows}
                         </tbody>
                     </table>
                 </div>
@@ -279,45 +271,24 @@ function SettingToggle({ label, active, onToggle }) {
     );
 }
 
-class Transporter extends React.Component {
-    constructor (props) {
-        super (props);
-    }
-
-    clear = () => {
-        const page = 1;
-        this.props.onChange(page);
-    }
-
-    previous = () => {
-        const page = (this.props.page - 1) > 0 ? (this.props.page - 1) : 1;
-        this.props.onChange(page);
-    }
-
-    next = () => {
-        const page = this.props.page + 1;
-        this.props.onChange(page);
-    }
-
-    render () {
-        return (
-            <nav id={this.props.containerId || 'transporter'}>
-                {this.props.page > 1 &&
-                    <button onClick={this.previous} title="Previous Page"><ChevronLeft /></button>
-                }
-                {this.props.page > 1 &&
-                    <button id="page_num" onClick={this.clear}>
-                        {this.props.page}
-                    </button>
-                }
-                <button onClick={this.next} title="Next Page"><ChevronRight /></button>
-                <button onClick={this.clear} title="Refresh">
-                {this.props.page > 1
-                    ? <Arrow90degUp />
-                    : <ArrowClockwise />
-                }
+function Transporter({ onChange, page, containerId }) {
+    return (
+        <nav id={containerId || 'transporter'}>
+            {page > 1 &&
+                <button onClick={() => onChange(Math.max(1, page - 1))} title="Previous Page"><ChevronLeft /></button>
+            }
+            {page > 1 &&
+                <button id="page_num" onClick={() => onChange(1)}>
+                    {page}
                 </button>
-            </nav>
-        )
-    }
+            }
+            <button onClick={() => onChange(page + 1)} title="Next Page"><ChevronRight /></button>
+            <button onClick={() => onChange(1)} title="Refresh">
+            {page > 1
+                ? <Arrow90degUp />
+                : <ArrowClockwise />
+            }
+            </button>
+        </nav>
+    );
 }

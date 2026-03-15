@@ -35,10 +35,6 @@ input:focus, button:focus-visible {
     outline-offset: -2px;
 }
 
-/* Visibility helpers */
-.hidden { display: none; }
-.visible { display: block; }
-
 
 /* =============================================================================
    Toolbar

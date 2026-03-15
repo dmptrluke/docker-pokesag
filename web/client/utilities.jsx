@@ -2,7 +2,7 @@ import React from 'react';
 
 /**
  * Hash a string to a consistent HSL color using FNV-1a.
- * FNV-1a has good avalanche properties — even very similar strings
+ * FNV-1a has good avalanche properties - even very similar strings
  * (e.g. "1140792" vs "1140587") produce wildly different hashes.
  * Saturation and lightness are also varied using different hash bits.
  */
@@ -25,7 +25,6 @@ export function recipientColor(str) {
  * Hover tooltip system.
  *
  * Load a mapping of tokens -> tooltip text from `public/tooltips.json`.
-
  *
  * Any token in the mapping will be matched as a whole word and wrapped with
  * a <span> carrying the tooltip in `data-tooltip`.
@@ -39,24 +38,15 @@ fetch('/tooltips.json')
         const keys = Object.keys(TOOLTIP_MAP).filter(Boolean);
         if (keys.length) {
             const escaped = keys.map(k => k.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&'));
-            // match keys (with optional trailing alphabetic suffix (e.g. 21D05M)
+            // match keys with optional trailing alphabetic suffix (e.g. 21D05M)
             TOOLTIP_REGEX = new RegExp(`\\b(${escaped.join('|')})(?:[A-Z]+)?\\b`, 'g');
         }
     })
-    .catch(() => {
-        // If fetch fails, TOOLTIP_REGEX remains empty and no annotations occur
-    });
-    
+    .catch(() => {});
+
 /**
- * Annotate message text by replacing recognised tokens with tooltip spans.
- *
- * - Uses the pre-built `TOOLTIP_REGEX` to find tokens (with optional trailing
- *   alphabetic suffixes, e.g. `21D05M`).
- * - Looks up the tooltip in `TOOLTIP_MAP` by exact token, falling back to the
- *   base token with trailing letters removed.
- * - Returns either the original `text` or an array of strings and React
- *   elements (<span className="code-badge" data-tooltip=...>) suitable for
- *   rendering inside JSX.
+ * Replace recognised tokens in message text with tooltip spans.
+ * Returns either the original string or an array of strings/React elements.
  */
 export function annotateMessage(text) {
     if (!text || !TOOLTIP_REGEX) return text;

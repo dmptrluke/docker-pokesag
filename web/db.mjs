@@ -14,7 +14,7 @@ class PagesRepository {
     }
 
     latest(offset=0) {
-        return this.rep.any(`SELECT id, rx_date, source, recipient, content FROM pages 
+        return this.rep.any(`SELECT id, rx_date, source, recipient, content FROM pages
         ORDER BY rx_date DESC, recipient ASC LIMIT 100 OFFSET $1::int`, [offset]);
     }
 
@@ -23,12 +23,12 @@ class PagesRepository {
         ORDER BY rx_date DESC, recipient ASC LIMIT 100 OFFSET $1::int`, [offset, query]);
     }
 
-    search_basic(query, offset=0) {
+    searchBasic(query, offset=0) {
         return this.rep.any(`SELECT id, rx_date, source, recipient, content FROM pages WHERE content ILIKE $2::text OR recipient=$3::text OR source=$3::text
         ORDER BY rx_date DESC, recipient ASC LIMIT 100 OFFSET $1::int`, [offset, `%${query}%`, query]);
     }
 
-    search_source(query, offset=0) {
+    searchSource(query, offset=0) {
         return this.rep.any(`SELECT id, rx_date, source, recipient, content FROM pages WHERE source ILIKE $2::text
         ORDER BY rx_date DESC, recipient ASC LIMIT 100 OFFSET $1::int`, [offset, `%${query}%`]);
     }
@@ -44,7 +44,7 @@ pgp.pg.types.setTypeParser(pgp.pg.types.builtins.TIMESTAMP, date => {
     return DateTime.fromSQL(date).toISO();
 });
 
-export const db = pgp ({
+export const db = pgp({
     user: DB_USER,
     password: DB_PASS,
     host: DB_HOST,

@@ -1,23 +1,16 @@
-import { resolve, dirname } from 'path';
+import { resolve } from 'path';
 import { readFile } from 'fs/promises';
 import express from 'express';
 import compression from 'compression';
 import { db } from './db.mjs';
 
-const __dirname = dirname(new URL(import.meta.url).pathname);
+const __dirname = import.meta.dirname;
 
-/***************
- * HTTP Server *
- ***************/
+const app = express();
+const port = process.env.PORT || 8000;
 
-let app = express ();
-let port = process.env.PORT || 8000;
+app.use(compression());
 
-app.use(compression())
-
-// Load tooltips.json once at startup and serve from memory.
-// This allows the file to be mounted as a config volume rather than baked into the image.
-// Falls back to an empty object if the file is missing or unreadable.
 const TOOLTIP_FILE = process.env.TOOLTIP_FILE || '/config/tooltips.json';
 let tooltipsData = '{}';
 try {
@@ -29,45 +22,37 @@ app.get('/tooltips.json', (_req, res) => {
     res.type('application/json').send(tooltipsData);
 });
 
-app.use (express.static (resolve (__dirname, './client/public'), { index: ['index.html'], maxAge: '1h' }));
-app.use (express.static (resolve (__dirname, './client/dist'), { maxAge: '7d' }));
+app.use(express.static(resolve(__dirname, './client/public'), { index: ['index.html'], maxAge: '1h' }));
+app.use(express.static(resolve(__dirname, './client/dist'), { maxAge: '7d' }));
 
-/* A small wrapper around a app.get handler!
-   This abstracts away generic code that is used on all api requests. */
 function GET(url, handler) {
     app.get(url, async (req, res) => {
         try {
             const data = await handler(req);
-            res.json({
-                success: true,
-                data
-            });
+            res.json({ success: true, data });
         } catch (error) {
-            res.status(500).json({
-                success: false,
-                error: error.message || error
-            });
+            console.error('API error:', error);
+            res.status(500).json({ success: false, error: 'Internal server error' });
         }
     });
 }
 
 function offset(req) {
-    return Math.max (0, (parseInt (req.params.page) - 1) * 100) || 0;
+    return Math.max(0, (parseInt(req.params.page, 10) - 1) * 100) || 0;
 }
 
-GET('/pages/', () => db.pages.latest ());
-GET('/pages/:page/', req => db.pages.latest (offset (req)));
+GET('/pages/', () => db.pages.latest());
+GET('/pages/:page/', req => db.pages.latest(offset(req)));
 
-GET('/pages/search/ft/:q/', req => db.pages.search (req.params.q));
-GET('/pages/search/ft/:q/:page/', req => db.pages.search (req.params.q, offset (req)));
+GET('/pages/search/ft/:q/', req => db.pages.search(req.params.q));
+GET('/pages/search/ft/:q/:page/', req => db.pages.search(req.params.q, offset(req)));
 
-GET('/pages/search/basic/:q/', req => db.pages.search_basic (req.params.q));
-GET('/pages/search/basic/:q/:page/', req => db.pages.search_basic (req.params.q, offset (req)));
+GET('/pages/search/basic/:q/', req => db.pages.searchBasic(req.params.q));
+GET('/pages/search/basic/:q/:page/', req => db.pages.searchBasic(req.params.q, offset(req)));
 
-// Search by source address only, e.g. "1234567890" or "123%". We need this because our legacy DB scheme doesn't index the source field
-GET('/pages/search/source/:q/', req => db.pages.search_source (req.params.q));
-GET('/pages/search/source/:q/:page/', req => db.pages.search_source (req.params.q, offset (req)));
+GET('/pages/search/source/:q/', req => db.pages.searchSource(req.params.q));
+GET('/pages/search/source/:q/:page/', req => db.pages.searchSource(req.params.q, offset(req)));
 
-let server = app.listen (port, '::', () => {
-    console.log ('Listening on port %s.', server.address ().port);
+const server = app.listen(port, '::', () => {
+    console.log('Listening on port %s.', server.address().port);
 });

@@ -10,7 +10,11 @@ export function loadSettings() {
     const out = {};
     for (const def of SETTINGS_DEFS) {
         const raw = localStorage.getItem(def.key);
-        out[def.key] = raw !== null ? JSON.parse(raw) : def.default;
+        try {
+            out[def.key] = raw !== null ? JSON.parse(raw) : def.default;
+        } catch {
+            out[def.key] = def.default;
+        }
     }
     return out;
 }
