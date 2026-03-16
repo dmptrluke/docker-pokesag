@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 1.2.0 (2026-03-16)
+
+### Changed
+
+- Hardcoded SDR sample rate to 1 MSPS; removed `sample_rate` from `channels.json` config.
+- Rewrote Quick Start section in README.
+
 ## 1.1.0 (2026-03-16)
 
 ### Changed

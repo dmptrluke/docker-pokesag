@@ -54,8 +54,8 @@ CHANNELS_FILE = _env.str('CHANNELS_FILE', '/config/channels.json')
 def _load_config():
     """Load channel definitions from JSON config file.
 
-    The config file must exist and contain center_freq, sample_rate,
-    and a channels list.  The receiver will refuse to start without it.
+    The config file must exist and contain center_freq and a channels
+    list.  The receiver will refuse to start without it.
     """
     if not os.path.isfile(CHANNELS_FILE):
         raise SystemExit(
@@ -69,7 +69,7 @@ def _load_config():
             raise SystemExit(f'Invalid JSON in {CHANNELS_FILE}') from exc
 
     # Basic validation
-    for key in ('center_freq', 'sample_rate', 'channels'):
+    for key in ('center_freq', 'channels'):
         if key not in cfg:
             raise SystemExit(f"Missing required key '{key}' in {CHANNELS_FILE}")
 
@@ -90,15 +90,15 @@ def _load_config():
 
 _config = _load_config()
 CENTER_FREQ = _config['center_freq']
-SAMPLE_RATE = _config['sample_rate']
 CHANNELS = _config['channels']
 
 # ---------------------------------------------------------------------------
 # SDR tuning
 # ---------------------------------------------------------------------------
+SAMPLE_RATE = 1_000_000  # 1 MSPS (standard RTL-SDR rate)
 AUDIO_RATE = 22050  # multimon-ng native sample rate
 
-# Decimation from SAMPLE_RATE → CHANNEL_RATE
+# Decimation from SAMPLE_RATE -> CHANNEL_RATE
 DECIMATION_IQ = 20
 CHANNEL_RATE = SAMPLE_RATE // DECIMATION_IQ  # 50 000 Hz
 

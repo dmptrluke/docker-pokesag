@@ -55,14 +55,13 @@ You can also choose to use an external database by omitting the `db` container a
 
 ## Channel Configuration
 
-The receiver requires a `channels.json` file that defines the SDR centre frequency, sample rate, and channels to decode. This file must be mounted into the container at `/config/channels.json`.
+The receiver requires a `channels.json` file that defines the SDR centre frequency and channels to decode. This file must be mounted into the container at `/config/channels.json`.
 
 Here is an example configuration for typical New Zealand paging frequencies:
 
 ```json
 {
   "center_freq": 157900000,
-  "sample_rate": 1000000,
   "channels": [
     {
       "name": "NZ 925",
@@ -86,7 +85,6 @@ Here is an example configuration for typical New Zealand paging frequencies:
 | Field | Description |
 |-------|-------------|
 | `center_freq` | RTL-SDR centre frequency in Hz. |
-| `sample_rate` | SDR sample rate in Hz (typically 1000000). |
 | `channels[].name` | Display name for the channel (appears in the `source` column). |
 | `channels[].offset_hz` | Offset in Hz from `center_freq` to the channel frequency. |
 | `channels[].protocols` | List of protocols to decode. Supported: `POCSAG512`, `POCSAG1200`, `POCSAG2400`, `FLEX`, `FLEX_NEXT`. |
@@ -124,16 +122,15 @@ If this is not set, the receiver defaults to device index 0.
 
 You can find your dongle's serial number by running `rtl_test` on the host.
 
-## Step by Step
-If you're new to Docker, below is a step by step guide to running PokéSAG in Docker. 
+## Quick Start
 
-First of all, you'll need to install Docker. Head to the [official documentation](https://docs.docker.com/engine/install/) and select your Linux distro under the "Server" section and follow the instructions on the page.
+1. Install [Docker](https://docs.docker.com/engine/install/).
+2. Create a new folder and save the `docker-compose.yml` example above into it.
+3. Create a `channels.json` file in the same folder with your local paging frequencies (see Channel Configuration above).
+4. Plug in your RTL-SDR dongle.
+5. Run `docker compose up` to start PokéSAG.
 
-After that, create a new folder to work in to keep things tidy. In that folder create a file called `docker-compose.yml` with the text in the previous section, and save it. If you just want a basic install of PokéSAG, you won't need to edit anything.
-
-Finally, run `docker compose up` to start PokéSAG! This will run in the foreground. When you're happy with how everything is working, you can use `docker compose up -d` to run everything in the background.
-
-To update to the latest version, just run `docker compose pull` and then `docker compose up -d` again.
+Once everything is working, use `docker compose up -d` to run in the background. To update, run `docker compose pull && docker compose up -d`.
 
 ## License
 
