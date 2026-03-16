@@ -4,6 +4,7 @@ services:
   db:
     image: postgres:15
     container_name: pokesag_db
+    restart: unless-stopped
     environment:
       POSTGRES_USER: pokesag
       POSTGRES_PASSWORD: pokesag
@@ -13,6 +14,7 @@ services:
   web:
     image: ghcr.io/dmptrluke/pokesag-web:master
     container_name: pokesag_web
+    restart: unless-stopped
     build:
       context: ./web
       dockerfile: Dockerfile
@@ -26,6 +28,7 @@ services:
   receiver:
     image: ghcr.io/dmptrluke/pokesag-receiver:master
     container_name: pokesag_receiver
+    restart: unless-stopped
     build:
       context: ./receiver
       dockerfile: Dockerfile

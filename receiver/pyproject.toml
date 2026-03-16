@@ -1,10 +1,10 @@
 [project]
 name = "pokesag-receiver"
-version = "1.0.0"
+version = "1.1.0"
 requires-python = ">=3.11"
 dependencies = [
     "environs",
-    "psycopg2",
+    "psycopg[binary]",
 ]
 
 [tool.ruff]

@@ -19,11 +19,10 @@ import re
 import signal
 import subprocess
 import threading
-import time
 from pathlib import Path
 
 import osmosdr
-import psycopg2
+import psycopg
 from environs import Env
 from gnuradio import analog, blocks, fft, gr
 from gnuradio import filter as gr_filter
@@ -44,12 +43,10 @@ DB_PASS = _env.str('DB_PASS', 'pokesag')
 DB_PORT = _env.int('DB_PORT', 5432)
 
 DISCARD_SPAM = _env.bool('DISCARD_SPAM', False)
-STATS_INTERVAL = _env.int('STATS_INTERVAL', 30)
 RTL_DEVICE_SERIAL = _env.str('RTL_DEVICE_SERIAL', '')
 
 # ---------------------------------------------------------------------------
 # Channel configuration (loaded from file)
-# having two different configuration sources (env + file) is a bit inelegant
 # ---------------------------------------------------------------------------
 CHANNELS_FILE = _env.str('CHANNELS_FILE', '/config/channels.json')
 
@@ -76,9 +73,18 @@ def _load_config():
         if key not in cfg:
             raise SystemExit(f"Missing required key '{key}' in {CHANNELS_FILE}")
 
-    # Expand protocol lists into multimon-ng -a flags
-    for ch in cfg['channels']:
+    if not cfg['channels']:
+        raise SystemExit(f'No channels defined in {CHANNELS_FILE}')
+
+    for i, ch in enumerate(cfg['channels']):
+        for key in ('name', 'offset_hz', 'protocols'):
+            if key not in ch:
+                raise SystemExit(f"Channel {i}: missing required key '{key}' in {CHANNELS_FILE}")
+        if not ch['protocols']:
+            raise SystemExit(f"Channel {i} ({ch['name']}): protocols list is empty")
+        # Expand protocol lists into multimon-ng -a flags
         ch['protocols'] = [x for p in ch['protocols'] for x in ('-a', p)]
+
     return cfg
 
 
@@ -131,13 +137,11 @@ logging.getLogger('osmosdr').setLevel(logging.WARNING)
 # ---------------------------------------------------------------------------
 # Signal handling for graceful shutdown
 # ---------------------------------------------------------------------------
-running = True
+shutdown_event = threading.Event()
 
 
-def _sig_handler(signum, _frame):
-    global running
-    running = False
-    log.info('Received signal %d - shutting down...', signum)
+def _sig_handler(_signum, _frame):
+    shutdown_event.set()
 
 
 signal.signal(signal.SIGTERM, _sig_handler)
@@ -154,14 +158,14 @@ class Database:
 
     # -- connection --------------------------------------------------------
     def connect(self):
-        self._conn = psycopg2.connect(
+        self._conn = psycopg.connect(
             host=DB_HOST,
             port=DB_PORT,
-            database=DB_NAME,
+            dbname=DB_NAME,
             user=DB_USER,
             password=DB_PASS,
+            autocommit=True,
         )
-        self._conn.autocommit = True
 
     def _reconnect(self):
         try:
@@ -405,6 +409,10 @@ class MultimonChannel:
                 self._pages_decoded += 1
             return
 
+    @property
+    def alive(self):
+        return self._proc is not None and self._proc.poll() is None
+
     def log_stats(self):
         """Log throughput stats."""
         log.info(
@@ -412,7 +420,7 @@ class MultimonChannel:
             self.name,
             self._pages_decoded,
             self._proc.pid if self._proc else '?',
-            self._proc.poll() is None if self._proc else False,
+            self.alive,
         )
 
     def stop(self):
@@ -517,16 +525,17 @@ class PagerFlowgraph(gr.top_block):
             )
 
 
+_RE_CONTROL_MARKER = re.compile(r'<(?:NUL|SOH|STX|ETX|EOT|ENQ|ACK|BEL|BS|HT|LF|VT|FF|CR|SO|SI|DLE|NAK|SYN|ETB|CAN|EM|SUB|ESC|DEL)>')
+
+
 def _clean(s: str) -> str:
     """Keep only printable ASCII (0x20-0x7E) and strip multimon-ng
-    control-character markers like <ETX>."""
-    s = re.sub(r'<ETX>', '', s)
+    control-character markers like <ETX>, <NUL>, <SOH>, etc."""
+    s = _RE_CONTROL_MARKER.sub('', s)
     return ''.join(c for c in s if 32 <= ord(c) < 127).strip()
 
 
 def main():
-    global running
-
     log.info('PokeSAG Receiver starting (GNURadio backend)')
     log.info(
         'DSP config: centre=%.3f MHz  sdr_rate=%d  channel_rate=%d  audio_rate=%d  demod_gain=%.3f  audio_scale=%.0f',
@@ -548,44 +557,45 @@ def main():
     # ---- Wait for database ----
     db = Database()
     log.info('Waiting for database...')
-    while running:
+    while not shutdown_event.is_set():
         try:
             db.connect()
             break
         except Exception as exc:
             log.warning('DB not ready: %s', exc)
-            time.sleep(2)
-    if not running:
+            shutdown_event.wait(2)
+    if shutdown_event.is_set():
         return
     log.info('Connected to database.')
     db.create_tables()
 
     # ---- Start multimon-ng subprocesses ----
     mms = []
+    channel_fds = []
     for cfg in CHANNELS:
         mc = MultimonChannel(cfg['name'], cfg['protocols'], db)
         mc.start()
         fd = mc.stdin_fd
-
+        channel_fds.append(fd)
         mms.append(mc)
         log.info("multimon-ng for '%s' started, fd=%d", cfg['name'], fd)
 
     # ---- Start GNURadio flowgraph ----
     radio = None
     try:
-        # Pass the list of multimon-ng stdin fds to the flowgraph,
-        # which will write audio samples to them directly
-        radio = PagerFlowgraph([i.stdin_fd for i in mms])
+        radio = PagerFlowgraph(channel_fds)
         log.info('Starting GNURadio flowgraph...')
         radio.start()
         log.info('Flowgraph running — waiting for pages...')
 
         # main loop: just wait and log stats periodically until interrupted
         # all the work happens in GNURadio and MultimonChannels
-        while running:
-            time.sleep(STATS_INTERVAL)
+        while not shutdown_event.wait(60):
             for instance in mms:
                 instance.log_stats()
+                if not instance.alive:
+                    log.error('multimon-ng [%s] died, exiting for restart', instance.name)
+                    raise SystemExit(1)
             # Touch heartbeat file so Docker healthcheck can verify we're alive
             with contextlib.suppress(OSError):
                 Path(HEARTBEAT_FILE).touch()

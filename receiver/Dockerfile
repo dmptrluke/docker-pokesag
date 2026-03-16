@@ -1,37 +1,39 @@
+FROM debian:bookworm-slim AS build
+
+# ---- Build multimon-ng from source ----
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    build-essential \
+    cmake \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /tmp
+RUN git clone --branch 1.4.1 --depth 1 https://github.com/EliasOenal/multimon-ng.git \
+    && cd multimon-ng \
+    && mkdir build \
+    && cd build \
+    && cmake .. \
+    && make -j"$(nproc)" \
+    && make install
+
+# ---- Runtime image ----
 FROM debian:bookworm-slim
 
-# ---- Install GNURadio + gr-osmosdr + system Python deps ----
 # gnuradio requires a terminal emulator; xterm is the lightest provider.
 # gr-osmosdr provides the osmosdr source block for RTL-SDR.
-# python3-psycopg2 for PostgreSQL access.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     xterm \
     gnuradio \
     gr-osmosdr \
-    python3-psycopg2 \
     rtl-sdr \
-    build-essential \
-    cmake \
-    git \
-    netcat-openbsd \
     python3-pip \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
-    && pip3 install --no-cache-dir --break-system-packages environs
+    && pip3 install --no-cache-dir --break-system-packages environs psycopg[binary]
 
-# ---- Build and install multimon-ng from source (latest) ----
-WORKDIR /tmp
-RUN git clone --depth 1 https://github.com/EliasOenal/multimon-ng.git \
-    && cd multimon-ng \
-    && mkdir build
+COPY --from=build /usr/local/bin/multimon-ng /usr/local/bin/multimon-ng
 
-WORKDIR /tmp/multimon-ng/build
-RUN cmake .. \
-    && make -j"$(nproc)" \
-    && make install \
-    && rm -rf /tmp/multimon-ng
-
-# ---- Copy receiver code ----
 WORKDIR /code
 COPY . .
 
