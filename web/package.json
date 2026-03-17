@@ -18,7 +18,7 @@
         "pg-promise": "^12.6.2"
     },
     "devDependencies": {
-        "esbuild": "^0.25.0",
+        "esbuild": "^0.27.4",
         "react": "^19.2.4",
         "react-bootstrap-icons": "^1.11.6",
         "react-dom": "^19.2.4"
