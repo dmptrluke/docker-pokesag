@@ -22,6 +22,8 @@ FROM debian:bookworm-slim
 
 COPY --from=ghcr.io/astral-sh/uv:0.6 /uv /usr/local/bin/uv
 
+# gnuradio pulls in compilers, LLVM, Qt, scipy as hard deps that aren't
+# needed at runtime. Force-purge after install to save ~900MB.
 # gnuradio requires a terminal emulator; xterm is the lightest provider.
 # gr-osmosdr provides the osmosdr source block for RTL-SDR.
 RUN apt-get update \
@@ -31,6 +33,15 @@ RUN apt-get update \
     gnuradio \
     gr-osmosdr \
     rtl-sdr \
+    && dpkg --force-depends --purge \
+    libboost1.74-dev libopenblas-pthread-dev libpython3.11-dev \
+    libstdc++-12-dev libc6-dev libgcc-12-dev linux-libc-dev \
+    gcc-12 g++-12 cpp-12 castxml \
+    binutils binutils-common binutils-x86-64-linux-gnu \
+    libllvm14 libllvm15 libclang-cpp14 libz3-4 \
+    python3-pygccxml python3-all-dev python3-dev python3-all \
+    python3-scipy python3-pyqt5 python3-pyqt6 \
+    libjs-mathjax \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /code
