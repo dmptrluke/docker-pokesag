@@ -24,15 +24,14 @@ COPY --from=ghcr.io/astral-sh/uv:0.6 /uv /usr/local/bin/uv
 
 # gnuradio requires a terminal emulator; xterm is the lightest provider.
 # gr-osmosdr provides the osmosdr source block for RTL-SDR.
-RUN --mount=type=cache,target=/var/lib/apt/lists \
-    --mount=type=cache,target=/var/cache/apt \
-    apt-get update \
+RUN apt-get update \
     && apt-get install -y --no-install-recommends \
     ca-certificates \
     xterm \
     gnuradio \
     gr-osmosdr \
-    rtl-sdr
+    rtl-sdr \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /code
 
