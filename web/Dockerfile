@@ -4,7 +4,8 @@ ARG BUILD_MODE=production
 
 WORKDIR /code
 COPY ["package.json", "package-lock.json*", "./"]
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci
 
 COPY . .
 
