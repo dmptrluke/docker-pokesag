@@ -9,6 +9,18 @@ on:
   pull_request:
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Lint
+        run: |
+          uvx ruff check receiver/
+          uvx ruff format --check receiver/
+
   build-receiver:
     runs-on: ubuntu-latest
     

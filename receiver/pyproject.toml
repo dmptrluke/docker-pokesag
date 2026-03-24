@@ -1,6 +1,6 @@
 [project]
 name = "pokesag-receiver"
-version = "1.2.0"
+version = "1.3.0"
 requires-python = ">=3.11"
 dependencies = [
     "environs",
@@ -23,10 +23,24 @@ select = [
     "SIM",       # flake8-simplify
     "RUF",       # ruff-specific
     "PIE",       # flake8-pie
+    "T20",       # flake8-print (no stray prints)
+    "T10",       # flake8-debugger (no breakpoints)
+    "BLE",       # flake8-blind-except
+    "LOG",       # flake8-logging
+    "ISC",       # flake8-implicit-str-concat
+    "FLY",       # flynt (f-string migration)
+    "FURB",      # refurb (modernization)
+    "RET",       # flake8-return (clean control flow)
+    "N",         # pep8-naming
+    "PGH",       # pygrep-hooks (precise suppressions)
+    "RSE",       # flake8-raise (clean raise statements)
+    "DTZ",       # flake8-datetimez (timezone-aware dates)
+    "PTH",       # flake8-use-pathlib
 ]
 ignore = [
     "SIM103",  # return condition directly
     "SIM108",  # ternary operator
+    "BLE001",  # broad except catches are intentional at DB/subprocess boundaries
 ]
 
 [tool.ruff.format]

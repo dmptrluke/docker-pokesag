@@ -1,6 +1,5 @@
 FROM debian:bookworm-slim AS build
 
-# ---- Build multimon-ng from source ----
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     build-essential \
@@ -17,24 +16,32 @@ RUN git clone --branch 1.4.1 --depth 1 https://github.com/EliasOenal/multimon-ng
     && make -j"$(nproc)" \
     && make install
 
-# ---- Runtime image ----
+# Runtime
+
 FROM debian:bookworm-slim
+
+COPY --from=ghcr.io/astral-sh/uv:0.6 /uv /usr/local/bin/uv
 
 # gnuradio requires a terminal emulator; xterm is the lightest provider.
 # gr-osmosdr provides the osmosdr source block for RTL-SDR.
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN --mount=type=cache,target=/var/lib/apt/lists \
+    --mount=type=cache,target=/var/cache/apt \
+    apt-get update \
+    && apt-get install -y --no-install-recommends \
     ca-certificates \
     xterm \
     gnuradio \
     gr-osmosdr \
-    rtl-sdr \
-    python3-pip \
-    && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
-    && pip3 install --no-cache-dir --break-system-packages environs psycopg[binary]
-
-COPY --from=build /usr/local/bin/multimon-ng /usr/local/bin/multimon-ng
+    rtl-sdr
 
 WORKDIR /code
+
+COPY pyproject.toml uv.lock ./
+RUN uv export --frozen --no-dev --no-hashes -o /tmp/requirements.txt \
+    && uv pip install --system --break-system-packages --no-cache -r /tmp/requirements.txt \
+    && rm /usr/local/bin/uv /tmp/requirements.txt
+
+COPY --from=build /usr/local/bin/multimon-ng /usr/local/bin/multimon-ng
 COPY . .
 
 ENV DB_HOST=db
@@ -44,7 +51,6 @@ ENV DB_PASS=pokesag
 ENV DB_PORT=5432
 ENV DISCARD_SPAM=false
 
-# Healthcheck: verify the heartbeat file was touched within the last 120 seconds
 HEALTHCHECK --start-period=60s --interval=30s --timeout=5s \
     CMD find /tmp/pokesag_heartbeat -mmin -2 | grep -q . || exit 1
 

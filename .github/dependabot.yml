@@ -36,6 +36,18 @@ updates:
           - minor
           - patch
 
+  - package-ecosystem: uv
+    directory: "/receiver"
+    schedule:
+      interval: weekly
+      time: "09:00"
+      timezone: Pacific/Auckland
+    groups:
+      uv-minor-patch:
+        update-types:
+          - minor
+          - patch
+
   - package-ecosystem: github-actions
     directory: "/"
     schedule:

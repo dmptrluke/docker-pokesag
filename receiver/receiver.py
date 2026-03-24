@@ -57,12 +57,13 @@ def _load_config():
     The config file must exist and contain center_freq and a channels
     list.  The receiver will refuse to start without it.
     """
-    if not os.path.isfile(CHANNELS_FILE):
+    config_path = Path(CHANNELS_FILE)
+    if not config_path.is_file():
         raise SystemExit(
             f'Channel config file not found: {CHANNELS_FILE}\n'
             'Set CHANNELS_FILE env var or mount a config at /config/channels.json'
         )
-    with open(CHANNELS_FILE) as f:
+    with config_path.open() as f:
         try:
             cfg = json.load(f)
         except json.JSONDecodeError as exc:
@@ -81,7 +82,7 @@ def _load_config():
             if key not in ch:
                 raise SystemExit(f"Channel {i}: missing required key '{key}' in {CHANNELS_FILE}")
         if not ch['protocols']:
-            raise SystemExit(f"Channel {i} ({ch['name']}): protocols list is empty")
+            raise SystemExit(f'Channel {i} ({ch["name"]}): protocols list is empty')
         # Expand protocol lists into multimon-ng -a flags
         ch['protocols'] = [x for p in ch['protocols'] for x in ('-a', p)]
 
@@ -525,7 +526,9 @@ class PagerFlowgraph(gr.top_block):
             )
 
 
-_RE_CONTROL_MARKER = re.compile(r'<(?:NUL|SOH|STX|ETX|EOT|ENQ|ACK|BEL|BS|HT|LF|VT|FF|CR|SO|SI|DLE|NAK|SYN|ETB|CAN|EM|SUB|ESC|DEL)>')
+_RE_CONTROL_MARKER = re.compile(
+    r'<(?:NUL|SOH|STX|ETX|EOT|ENQ|ACK|BEL|BS|HT|LF|VT|FF|CR|SO|SI|DLE|NAK|SYN|ETB|CAN|EM|SUB|ESC|DEL)>'
+)
 
 
 def _clean(s: str) -> str:
