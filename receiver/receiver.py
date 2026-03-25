@@ -28,7 +28,7 @@ from gnuradio import analog, blocks, fft, gr
 from gnuradio import filter as gr_filter
 from gnuradio.filter import firdes
 
-HEARTBEAT_FILE = '/tmp/pokesag_heartbeat'  # touched every stats cycle
+HEARTBEAT_FILE = '/tmp/pokesag_heartbeat'  # touched every stats cycle  # noqa: S108
 
 # ---------------------------------------------------------------------------
 # Configuration from environment
@@ -172,7 +172,7 @@ class Database:
         try:
             if self._conn and not self._conn.closed:
                 self._conn.close()
-        except Exception:
+        except Exception:  # noqa: S110
             pass
         self.connect()
 
@@ -316,7 +316,8 @@ class MultimonChannel:
 
     def _read_stdout(self):
         """This runs in a separate thread and reads multimon-ng stdout (self._reader)"""
-        assert self._proc and self._proc.stdout
+        if not self._proc or not self._proc.stdout:
+            raise RuntimeError('subprocess not started')
         for raw in self._proc.stdout:
             line = raw.decode('utf-8', errors='replace').strip()
             if not line:
@@ -325,7 +326,8 @@ class MultimonChannel:
 
     def _read_stderr(self):
         """This runs in a separate thread and reads multimon-ng stderr (self._err_reader)"""
-        assert self._proc and self._proc.stderr
+        if not self._proc or not self._proc.stderr:
+            raise RuntimeError('subprocess not started')
         for raw in self._proc.stderr:
             line = raw.decode('utf-8', errors='replace').strip()
             if line:
