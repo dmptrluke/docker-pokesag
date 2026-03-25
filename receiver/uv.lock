@@ -35,8 +35,8 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "environs" },
-    { name = "psycopg", extras = ["binary"] },
+    { name = "environs", specifier = ">=14.6" },
+    { name = "psycopg", extras = ["binary"], specifier = ">=3.3,<4" },
 ]
 
 [[package]]
