@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## 1.4.1 (2026-03-31)
+
+- Add provenance and SBOM attestations to Docker builds
+- Move DockerHub credentials to environment secrets
+- Add build concurrency (cancel superseded runs)
+- Bump CI dependencies (setup-uv, upload-artifact, download-artifact)
 
 ## 1.2.0 (2026-03-16)
 
