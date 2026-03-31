@@ -82,6 +82,8 @@ jobs:
           context: ./receiver
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
+          provenance: true
+          sbom: true
           outputs: type=image,"name=dmptrluke/pokesag-receiver,ghcr.io/dmptrluke/pokesag-receiver",push-by-digest=true,name-canonical=true,push=${{ github.event_name != 'pull_request' }}
           cache-from: type=gha,scope=receiver-${{ matrix.platform }}
           cache-to: type=gha,scope=receiver-${{ matrix.platform }},mode=max
@@ -211,5 +213,7 @@ jobs:
           context: ./web
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          provenance: true
+          sbom: true
           cache-from: type=registry,ref=ghcr.io/dmptrluke/pokesag-web:master
           cache-to: type=inline
