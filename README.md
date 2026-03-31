@@ -31,7 +31,8 @@ services:
       # RTL_DEVICE_SERIAL: '00000001'  # Select RTL-SDR by serial number
     devices:
       - /dev/bus/usb:/dev/bus/usb
-    privileged: true
+    device_cgroup_rules:
+      - 'c 189:* rwm'
     restart: always
     volumes:
       - ./channels.json:/config/channels.json:ro

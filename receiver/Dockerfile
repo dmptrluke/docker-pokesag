@@ -84,14 +84,16 @@ RUN uv export --frozen --no-dev --no-hashes -o /tmp/requirements.txt \
 COPY --from=build /usr/local/bin/multimon-ng /usr/local/bin/multimon-ng
 COPY . .
 
-ENV DB_HOST=db
-ENV DB_NAME=pokesag
-ENV DB_USER=pokesag
-ENV DB_PASS=pokesag
-ENV DB_PORT=5432
-ENV DISCARD_SPAM=false
+RUN rm -rf /var/lib/dpkg /var/lib/apt /usr/bin/dpkg /usr/bin/apt-get
+
+ENV DB_HOST=db \
+    DB_NAME=pokesag \
+    DB_USER=pokesag \
+    DB_PASS=pokesag \
+    DB_PORT=5432 \
+    DISCARD_SPAM=false
 
 HEALTHCHECK --start-period=60s --interval=30s --timeout=5s \
-    CMD find /tmp/pokesag_heartbeat -mmin -2 | grep -q . || exit 1
+    CMD ["python3", "-c", "from pathlib import Path; import time; assert time.time() - Path('/tmp/pokesag_heartbeat').stat().st_mtime < 120"]
 
 CMD ["python3", "/code/receiver.py"]

@@ -40,6 +40,8 @@ services:
       - db
     devices:
       - /dev/bus/usb:/dev/bus/usb
+    device_cgroup_rules:
+      - 'c 189:* rwm'
     volumes:
       - ./channels.json:/config/channels.json:ro
 
