@@ -19,6 +19,7 @@ import re
 import signal
 import subprocess
 import threading
+import time
 from pathlib import Path
 
 import osmosdr
@@ -28,7 +29,7 @@ from gnuradio import analog, blocks, fft, gr
 from gnuradio import filter as gr_filter
 from gnuradio.filter import firdes
 
-HEARTBEAT_FILE = '/tmp/pokesag_heartbeat'  # touched every stats cycle  # noqa: S108
+HEARTBEAT_FILE = '/tmp/pokesag_heartbeat'  # written every stats cycle  # noqa: S108
 
 # ---------------------------------------------------------------------------
 # Configuration from environment
@@ -601,9 +602,9 @@ def main():
                 if not instance.alive:
                     log.error('multimon-ng [%s] died, exiting for restart', instance.name)
                     raise SystemExit(1)
-            # Touch heartbeat file so Docker healthcheck can verify we're alive
+            # Write timestamp so healthcheck binary can verify we're alive
             with contextlib.suppress(OSError):
-                Path(HEARTBEAT_FILE).touch()
+                Path(HEARTBEAT_FILE).write_text(str(time.time()))
 
     except KeyboardInterrupt:
         log.info('Keyboard interrupt received.')

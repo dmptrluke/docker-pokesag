@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.7.0 (2026-04-03)
+
+- Switch healthchecks to static Go binary (dmptrluke/healthcheck)
+
 ## 1.4.1 (2026-03-31)
 
 - Add provenance and SBOM attestations to Docker builds

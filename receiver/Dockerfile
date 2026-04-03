@@ -82,6 +82,7 @@ RUN uv export --frozen --no-dev --no-hashes -o /tmp/requirements.txt \
     && rm /usr/local/bin/uv /tmp/requirements.txt
 
 COPY --from=build /usr/local/bin/multimon-ng /usr/local/bin/multimon-ng
+COPY --from=ghcr.io/dmptrluke/healthcheck@sha256:3e9025c3550d94f35f1c565f8e71f89c9492fa4e79e440292ab776a144c460bb /healthcheck /usr/local/bin/healthcheck
 COPY . .
 
 RUN rm -rf /var/lib/dpkg /var/lib/apt /usr/bin/dpkg /usr/bin/apt-get
@@ -94,6 +95,6 @@ ENV DB_HOST=db \
     DISCARD_SPAM=false
 
 HEALTHCHECK --start-period=60s --interval=30s --timeout=5s \
-    CMD ["python3", "-c", "from pathlib import Path; import time; assert time.time() - Path('/tmp/pokesag_heartbeat').stat().st_mtime < 120"]
+    CMD ["healthcheck", "file-age", "/tmp/pokesag_heartbeat", "120"]
 
 CMD ["python3", "/code/receiver.py"]
