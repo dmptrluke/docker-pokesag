@@ -75,6 +75,43 @@ input:focus, button:focus-visible {
     display: flex;
 }
 
+#bottom_transporter {
+    display: flex;
+    justify-content: center;
+    margin: 24px 0;
+    background-color: #1e1e24;
+    border: 1px solid #35353f;
+    border-radius: 4px;
+    width: max-content;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#bottom_transporter button {
+    background-color: transparent;
+    border: 0;
+    border-right: 1px solid #35353f;
+    color: inherit;
+    font: inherit;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: color 0.15s, background-color 0.15s;
+}
+
+#bottom_transporter > *:last-child {
+    border-right: 0;
+}
+
+#bottom_transporter button:hover {
+    color: #fbbf24;
+    background-color: rgba(255,255,255,0.04);
+}
+
+#bottom_transporter button:active {
+    color: #f59e0b;
+    background-color: rgba(255,255,255,0.07);
+}
+
 /* No trailing border on the last button of any flex container */
 #toolbar > *:last-child,
 #transporter > *:last-child {
@@ -98,6 +135,18 @@ input:focus, button:focus-visible {
 #toolbar input[type=button]:active, #toolbar button:active {
     color: #f59e0b;
     background-color: rgba(255,255,255,0.07);
+}
+
+#toolbar button:disabled,
+#bottom_transporter button:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+#toolbar button:disabled:hover,
+#bottom_transporter button:disabled:hover {
+    color: inherit;
+    background-color: transparent;
 }
 
 /* Clear-search button — red tint */
@@ -176,7 +225,13 @@ input:focus, button:focus-visible {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    width: 100%;
     padding: 12px 20px;
+    background: none;
+    border: 0;
+    color: inherit;
+    font: inherit;
+    text-align: left;
     cursor: pointer;
     transition: background-color 0.15s;
     user-select: none;
@@ -275,20 +330,48 @@ input:focus, button:focus-visible {
 
 .page_source {
     white-space: nowrap;
-    width: 180px;
+    width: 140px;
     overflow: hidden;
     text-overflow: ellipsis;
     color: #c0c0d0;
     font-size: 0.88em;
-    cursor: pointer;
 }
 
-.page_source:hover {
-    color: #fbbf24;
+.page_source .cell-action {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.source-channel {
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+.standard-chip {
+    flex: 0 0 auto;
+    display: inline-block;
+    padding: 0 5px;
+    border-radius: 3px;
+    border: 1px solid #35353f;
+    background-color: #16161c;
+    font-size: 0.72em;
+    font-weight: 500;
+    line-height: 1.5;
+    letter-spacing: 0.03em;
+}
+
+.standard-chip-pocsag {
+    color: #93c5fd;
+}
+
+.standard-chip-flex {
+    color: #6ee7b7;
 }
 
 .page_recipient {
-    cursor: pointer;
     padding-left: 8px !important;
     font-variant-numeric: tabular-nums;
     font-weight: 600;
@@ -296,7 +379,27 @@ input:focus, button:focus-visible {
     width: 100px;
 }
 
-.page_recipient:hover {
+.cell-action {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: 0;
+    color: inherit;
+    font: inherit;
+    text-align: inherit;
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.page_source .cell-action:hover {
+    color: #fbbf24;
+}
+
+.page_recipient .cell-action:hover {
     filter: brightness(1.35);
 }
 
@@ -312,20 +415,20 @@ input:focus, button:focus-visible {
    HoverCode Tooltip
    ============================================================================= */
 
-.code-badge {
+.tooltip {
     position: relative;
-    color: #fbbf24;
+    color: inherit;
     cursor: help;
-    border-bottom: 1px dotted #fbbf24;
-    font-weight: 500;
+    border-bottom: 1px dotted #555560;
 }
 
-.code-badge:hover {
-    color: #fde68a;
+.tooltip:hover {
+    color: #fbbf24;
+    border-bottom-color: #fbbf24;
 }
 
 /* Tooltip bubble */
-.code-badge:hover::after {
+.tooltip:hover::after {
     content: attr(data-tooltip);
     position: absolute;
     bottom: 125%;
@@ -344,7 +447,7 @@ input:focus, button:focus-visible {
 }
 
 /* Tooltip arrow */
-.code-badge:hover::before {
+.tooltip:hover::before {
     content: '';
     position: absolute;
     bottom: 100%;
@@ -401,6 +504,27 @@ input:focus, button:focus-visible {
         border-left: none;
         border-right: none;
         border-top: none;
+    }
+
+    /* Sticky toolbar makes bottom pagination redundant */
+    #bottom_transporter {
+        display: none;
+    }
+
+    /* Source: pack chip+channel as a tight unit on the right, baseline-aligned with date */
+    .page_source .cell-action {
+        justify-content: flex-end;
+        align-items: baseline;
+        gap: 8px;
+    }
+
+    .page_source .source-channel {
+        flex: 0 0 auto;
+    }
+
+    /* Chip uses smaller font; centering it cross-axis lines it up visually with the larger channel/date text */
+    .page_source .standard-chip {
+        align-self: center;
     }
 
     /* Hide page number - too wide for small screens */

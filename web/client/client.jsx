@@ -1,10 +1,11 @@
 import React from 'react';
 import { DateTime } from 'luxon';
 import { XLg, ChevronLeft, ChevronRight, Arrow90degUp, ArrowClockwise, GearFill, X } from 'react-bootstrap-icons';
-import { recipientColor, annotateMessage } from './utilities';
+import { recipientColor, annotateMessage, parseSource } from './utilities';
 import { SETTINGS_DEFS, loadSettings, saveSetting } from './settings';
 
 const AUTO_REFRESH_INTERVAL_MS = 10000;
+const PAGE_SIZE = 100;
 
 export default class Client extends React.Component {
     constructor() {
@@ -13,6 +14,7 @@ export default class Client extends React.Component {
         this.state = {
             mode: 'normal',
             pages: [],
+            hasMore: false,
             searchString: '',
             page: 1,
             settingsOpen: false,
@@ -98,7 +100,7 @@ export default class Client extends React.Component {
                 if (!json.success) {
                     throw Error(json.error);
                 }
-                this.setState({ pages: json.data, error: null });
+                this.setState({ pages: json.data, hasMore: json.data.length === PAGE_SIZE, error: null });
             })
             .catch(error => {
                 console.error('Unable to fetch pages:', error);
@@ -156,11 +158,20 @@ export default class Client extends React.Component {
             const formattedDate = DateTime.fromISO(page.rx_date).toFormat(dateFormat);
             const color = settings.recipientColors ? recipientColor(page.recipient) : undefined;
             const recipientStyle = color ? { borderLeft: `3px solid ${color}`, color } : {};
+            const { channel, family, baud } = parseSource(page.source);
+            const chipClass = family ? `standard-chip standard-chip-${family.toLowerCase()}` : null;
+            const chipLabel = family ? `${family[0]}${baud}` : null;
             return <tr key={page.id}>
                     <td className="page_rx_date">{formattedDate}</td>
-                    <td className="page_source" onClick={() => this.handleSourceClick(page.source)}>{page.source}</td>
-                    <td className="page_recipient" onClick={() => this.handleRecipientClick(page.recipient)}
-                        style={recipientStyle}>{page.recipient}</td>
+                    <td className="page_source">
+                        <button type="button" className="cell-action" onClick={() => this.handleSourceClick(page.source)} title={page.source}>
+                            {chipLabel && <span className={chipClass} title={`${family} ${baud}`}>{chipLabel}</span>}
+                            <span className="source-channel">{channel}</span>
+                        </button>
+                    </td>
+                    <td className="page_recipient" style={recipientStyle}>
+                        <button type="button" className="cell-action" onClick={() => this.handleRecipientClick(page.recipient)}>{page.recipient}</button>
+                    </td>
                     <td className="page_content">{annotateMessage(page.content)}</td>
                 </tr>
         });
@@ -168,14 +179,14 @@ export default class Client extends React.Component {
         return <main>
                 <nav id="toolbar">
                     <span id="brand">PokeSAG</span>
-                    <button onClick={this.handleSettingsToggle} title="Settings"><GearFill /></button>
+                    <button type="button" onClick={this.handleSettingsToggle} title="Settings" aria-label="Settings"><GearFill /></button>
                     <input className="search_box" type="text" placeholder="Search..." value={searchString}
                            onChange={this.updateSearchString} onKeyDown={this.handleSearch} aria-label="Search Box" />
                     {searchString !== '' &&
-                        <button className="clear_search" onClick={this.clearSearch} title="Clear search"><XLg /></button>
+                        <button type="button" className="clear_search" onClick={this.clearSearch} title="Clear search" aria-label="Clear search"><XLg /></button>
                     }
                     <div className="spacer"></div>
-                    <Transporter onChange={this.handlePageChange} page={this.state.page} containerId="transporter" />
+                    <Transporter onChange={this.handlePageChange} page={this.state.page} hasMore={this.state.hasMore} containerId="transporter" />
                 </nav>
 
                 {settingsOpen &&
@@ -189,7 +200,7 @@ export default class Client extends React.Component {
                 {error &&
                     <div className="error-banner" role="alert">
                         <span>Unable to load pages: {error}</span>
-                        <button onClick={() => this.refresh()} title="Retry">Retry</button>
+                        <button type="button" onClick={() => this.refresh()} title="Retry">Retry</button>
                     </div>
                 }
 
@@ -208,6 +219,8 @@ export default class Client extends React.Component {
                         </tbody>
                     </table>
                 </div>
+
+                <Transporter onChange={this.handlePageChange} page={this.state.page} hasMore={this.state.hasMore} containerId="bottom_transporter" />
             </main>
     }
 }
@@ -238,11 +251,13 @@ class SettingsModal extends React.Component {
     render() {
         const { settings, onSettingChange, onClose } = this.props;
         return (
+            // biome-ignore lint/a11y/useKeyWithClickEvents: backdrop click is mouse convenience; keyboard users close via Escape (handled at document level in componentDidMount)
+            // biome-ignore lint/a11y/noStaticElementInteractions: see above
             <div className="modal-backdrop" ref={this._backdropRef} onClick={this.handleBackdropClick}>
                 <div className="modal-dialog">
                     <div className="modal-header">
                         <h3>Settings</h3>
-                        <button className="modal-close" onClick={onClose}><X /></button>
+                        <button type="button" className="modal-close" onClick={onClose} aria-label="Close settings"><X /></button>
                     </div>
                     <div className="modal-body">
                         {SETTINGS_DEFS.map(def => (
@@ -262,28 +277,28 @@ class SettingsModal extends React.Component {
 
 function SettingToggle({ label, active, onToggle }) {
     return (
-        <div className="setting-row" onClick={onToggle}>
+        <button type="button" className="setting-row" onClick={onToggle}>
             <span className="setting-label">{label}</span>
             <span className={active ? 'setting-toggle on' : 'setting-toggle off'}>
                 <span className="setting-toggle-knob"></span>
             </span>
-        </div>
+        </button>
     );
 }
 
-function Transporter({ onChange, page, containerId }) {
+function Transporter({ onChange, page, hasMore, containerId }) {
     return (
         <nav id={containerId || 'transporter'}>
             {page > 1 &&
-                <button onClick={() => onChange(Math.max(1, page - 1))} title="Previous Page"><ChevronLeft /></button>
+                <button type="button" onClick={() => onChange(Math.max(1, page - 1))} title="Previous Page" aria-label="Previous page"><ChevronLeft /></button>
             }
             {page > 1 &&
-                <button id="page_num" onClick={() => onChange(1)}>
+                <button type="button" id="page_num" onClick={() => onChange(1)}>
                     {page}
                 </button>
             }
-            <button onClick={() => onChange(page + 1)} title="Next Page"><ChevronRight /></button>
-            <button onClick={() => onChange(1)} title="Refresh">
+            <button type="button" onClick={() => onChange(page + 1)} disabled={!hasMore} title={hasMore ? 'Next Page' : 'No more pages'} aria-label="Next page"><ChevronRight /></button>
+            <button type="button" onClick={() => onChange(1)} title="Refresh" aria-label="Refresh">
             {page > 1
                 ? <Arrow90degUp />
                 : <ArrowClockwise />

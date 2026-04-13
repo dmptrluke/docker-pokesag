@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.8.0 (2026-04-13)
+
+- Show the protocol family (POCSAG/FLEX) and baud rate as a chip beside the source channel name
+- Add a bottom pagination control below the table on desktop
+- Disable the next-page button when there are no more results to load
+- Make filter-columns tab focusable
+- Soften the inline-code tooltip style
+- Preserve field-separator spacing in decoded pager messages
+- Add Biome linting for JS
+
 ## 1.7.0 (2026-04-03)
 
 - Switch healthchecks to static Go binary (dmptrluke/healthcheck)

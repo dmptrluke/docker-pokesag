@@ -1,0 +1,25 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.4.11/schema.json",
+	"vcs": {
+		"enabled": false
+	},
+	"files": {
+		"includes": ["client/*.{js,jsx,mjs}", "*.mjs"]
+	},
+	"formatter": {
+		"enabled": false
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"recommended": true,
+			"suspicious": {
+				"useIterableCallbackReturn": "off",
+				"noConsole": "warn"
+			}
+		}
+	},
+	"assist": {
+		"enabled": false
+	}
+}

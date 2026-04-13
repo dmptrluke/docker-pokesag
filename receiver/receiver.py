@@ -535,10 +535,17 @@ _RE_CONTROL_MARKER = re.compile(
 
 
 def _clean(s: str) -> str:
-    """Keep only printable ASCII (0x20-0x7E) and strip multimon-ng
-    control-character markers like <ETX>, <NUL>, <SOH>, etc."""
-    s = _RE_CONTROL_MARKER.sub('', s)
-    return ''.join(c for c in s if 32 <= ord(c) < 127).strip()
+    """Normalize multimon-ng decoded text.
+
+    Pager dispatch messages often use control characters (STX/ETX/US/RS)
+    as structured field separators. multimon-ng emits these either as
+    literal tag strings like '<ETX>' or as raw bytes. Replace both with a
+    single space so field boundaries are preserved, then collapse runs of
+    whitespace so multiple adjacent markers don't leave ugly gaps."""
+    s = _RE_CONTROL_MARKER.sub(' ', s)
+    s = ''.join(c if 32 <= ord(c) < 127 else ' ' for c in s)
+    s = re.sub(r'\s+', ' ', s)
+    return s.strip()
 
 
 def main():
@@ -592,7 +599,7 @@ def main():
         radio = PagerFlowgraph(channel_fds)
         log.info('Starting GNURadio flowgraph...')
         radio.start()
-        log.info('Flowgraph running — waiting for pages...')
+        log.info('Flowgraph running - waiting for pages...')
 
         # main loop: just wait and log stats periodically until interrupted
         # all the work happens in GNURadio and MultimonChannels

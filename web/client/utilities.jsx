@@ -1,5 +1,14 @@
 import React from 'react';
 
+// Source string format from the receiver: "<channel> (POCSAG1200)" or "<channel> (FLEX 1600)".
+const SOURCE_RE = /^(.+?)\s+\((POCSAG|FLEX)\s*(\d+)\)$/;
+
+export function parseSource(source) {
+    const m = source && source.match(SOURCE_RE);
+    if (!m) return { channel: source, family: null, baud: null };
+    return { channel: m[1], family: m[2], baud: m[3] };
+}
+
 /**
  * Hash a string to a consistent HSL color using FNV-1a.
  * FNV-1a has good avalanche properties - even very similar strings
@@ -51,13 +60,16 @@ fetch('/tooltips.json')
 export function annotateMessage(text) {
     if (!text || !TOOLTIP_REGEX) return text;
     const out = [], re = TOOLTIP_REGEX;
-    re.lastIndex = 0; let m, i = 0, last = 0;
-    while ((m = re.exec(text)) !== null) {
+    re.lastIndex = 0;
+    let i = 0, last = 0;
+    let m = re.exec(text);
+    while (m !== null) {
         if (m.index > last) out.push(text.slice(last, m.index));
         const token = m[0];
         const tip = TOOLTIP_MAP[token] || TOOLTIP_MAP[token.replace(/[A-Z]+$/, '')];
-        out.push(tip ? <span key={`hc${i++}`} className="code-badge" data-tooltip={tip}>{token}</span> : token);
+        out.push(tip ? <span key={`hc${i++}`} className="tooltip" data-tooltip={tip}>{token}</span> : token);
         last = re.lastIndex;
+        m = re.exec(text);
     }
     if (last < text.length) out.push(text.slice(last));
     return out.length ? out : text;

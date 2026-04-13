@@ -1,4 +1,4 @@
-__Warning: Depending on your region, it may not be legal to share or act upon any messages received by a radio scanner. 
+__Warning: Depending on your region, it may not be legal to share or act upon any messages received by a radio scanner.
 You are advised to check your local regulations, and to NOT expose PokéSAG to the internet.__
 
 ![PokéSAG Logo](web/client/public/images/icon_x128.png)
@@ -94,7 +94,7 @@ The receiver will refuse to start if `channels.json` is missing or invalid.
 
 ## Tooltips
 
-If you have a `tooltips.json` file, you can mount it into the **web** container to enable tooltip annotations on recognised codes in page messages. This file is optional — if not provided, the tooltip system is silently disabled.
+If you have a `tooltips.json` file, you can mount it into the **web** container to enable tooltip annotations on recognised codes in page messages. This file is optional - if not provided, the tooltip system is silently disabled.
 
 Mount it in your compose file:
 
