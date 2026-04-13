@@ -8,6 +8,7 @@ import os
 import subprocess
 import threading
 from datetime import UTC, datetime
+from pathlib import Path
 
 import config
 from db.database import Database
@@ -32,6 +33,7 @@ class MultimonChannel:
         self._pages_decoded = 0
         self._pages_dropped = 0
         self._pages_spam = 0
+        self._dump_fp = None
 
     def start(self):
         cmd = [
@@ -45,6 +47,13 @@ class MultimonChannel:
             '-',
         ]
         log.info('Starting multimon-ng for %s: %s', self.name, ' '.join(cmd))
+
+        if config.MMNG_DUMP_DIR:
+            dump_dir = Path(config.MMNG_DUMP_DIR)
+            dump_dir.mkdir(parents=True, exist_ok=True)
+            safe_name = self.name.replace('/', '_').replace(' ', '_')
+            self._dump_fp = (dump_dir / f'mmng-{safe_name}.jsonl').open('a', buffering=1)
+            log.info('mmng dump enabled for %s -> %s', self.name, self._dump_fp.name)
 
         self._proc = subprocess.Popen(
             cmd,
@@ -80,6 +89,8 @@ class MultimonChannel:
             line = raw.decode('utf-8', errors='replace').strip()
             if not line:
                 continue
+            if self._dump_fp is not None:
+                self._dump_fp.write(line + '\n')
             self._handle(line)
 
     def _read_stderr(self):
@@ -167,3 +178,7 @@ class MultimonChannel:
                 with contextlib.suppress(Exception):
                     self._proc.kill()
             self._proc = None
+        if self._dump_fp is not None:
+            with contextlib.suppress(Exception):
+                self._dump_fp.close()
+            self._dump_fp = None

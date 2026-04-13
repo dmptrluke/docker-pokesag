@@ -29,6 +29,10 @@ DB_PORT = _env.int('DB_PORT', 5432)
 DISCARD_SPAM = _env.bool('DISCARD_SPAM', False)
 RTL_DEVICE_SERIAL = _env.str('RTL_DEVICE_SERIAL', '')
 
+# When set, every raw multimon-ng stdout line is appended to
+# {MMNG_DUMP_DIR}/mmng-{channel}.jsonl for parser fixture collection.
+MMNG_DUMP_DIR = _env.str('MMNG_DUMP_DIR', '')
+
 CHANNELS_FILE = _env.str('CHANNELS_FILE', '/config/channels.json')
 
 
