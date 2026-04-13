@@ -6,3 +6,8 @@ web/node_modules
 web/client/dist
 *.sqlite3
 scratch/
+
+__pycache__/
+*.py[cod]
+.venv/
+.ruff_cache/

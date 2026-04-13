@@ -24,7 +24,7 @@ COPY --from=ghcr.io/astral-sh/uv:0.6 /uv /usr/local/bin/uv
 
 # gnuradio is one monolithic package; xterm satisfies its hard dep on
 # x-terminal-emulator during install. After install, force-purge everything
-# not needed at runtime. receiver.py uses: runtime, analog, blocks, fft,
+# not needed at runtime. main.py uses: runtime, analog, blocks, fft,
 # filter, pmt (plus osmosdr from gr-osmosdr)
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -97,4 +97,4 @@ ENV DB_HOST=db \
 HEALTHCHECK --start-period=60s --interval=30s --timeout=5s \
     CMD ["healthcheck", "file-age", "/tmp/pokesag_heartbeat", "120"]
 
-CMD ["python3", "/code/receiver.py"]
+CMD ["python3", "/code/src/main.py"]
