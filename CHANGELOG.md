@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Rebuild the settings modal on the native `<dialog>` element
+- Replace the custom settings toggle with a restyled checkbox
 - Replace search with composable filters by channel, protocol, baud, and recipient; filter state is kept in the URL so deep links and browser back/forward work
 - Rewrite the `pages` table to store channel, protocol, baud, content type, and per-decode metadata as structured columns (migration runs on receiver startup)
 - Drop the full-text search toggle; text search is a single trigram-accelerated substring match
