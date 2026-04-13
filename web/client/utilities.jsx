@@ -1,14 +1,5 @@
 import React from 'react';
 
-// Source string format from the receiver: "<channel> (POCSAG1200)" or "<channel> (FLEX 1600)".
-const SOURCE_RE = /^(.+?)\s+\((POCSAG|FLEX)\s*(\d+)\)$/;
-
-export function parseSource(source) {
-    const m = source && source.match(SOURCE_RE);
-    if (!m) return { channel: source, family: null, baud: null };
-    return { channel: m[1], family: m[2], baud: m[3] };
-}
-
 /**
  * Hash a string to a consistent HSL color using FNV-1a.
  * FNV-1a has good avalanche properties - even very similar strings

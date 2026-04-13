@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Replace search with composable filters by channel, protocol, baud, and recipient; filter state is kept in the URL so deep links and browser back/forward work
+- Rewrite the `pages` table to store channel, protocol, baud, content type, and per-decode metadata as structured columns (migration runs on receiver startup)
+- Drop the full-text search toggle; text search is a single trigram-accelerated substring match
+- Capture tone-only pages, previously dropped by the length-based spam filter
+- Log spam-filtered pages separately from database failures in receiver stats
+
 ## 1.8.0 (2026-04-13)
 
 - Show the protocol family (POCSAG/FLEX) and baud rate as a chip beside the source channel name

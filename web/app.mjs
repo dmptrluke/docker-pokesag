@@ -31,27 +31,28 @@ function GET(url, handler) {
             const data = await handler(req);
             res.json({ success: true, data });
         } catch (error) {
+            if (error && error.status === 404) {
+                res.status(404).json({ success: false, error: 'Not found' });
+                return;
+            }
             console.error('API error:', error);
             res.status(500).json({ success: false, error: 'Internal server error' });
         }
     });
 }
 
-function offset(req) {
-    return Math.max(0, (parseInt(req.params.page, 10) - 1) * 100) || 0;
-}
-
-GET('/pages/', () => db.pages.latest());
-GET('/pages/:page/', req => db.pages.latest(offset(req)));
-
-GET('/pages/search/ft/:q/', req => db.pages.search(req.params.q));
-GET('/pages/search/ft/:q/:page/', req => db.pages.search(req.params.q, offset(req)));
-
-GET('/pages/search/basic/:q/', req => db.pages.searchBasic(req.params.q));
-GET('/pages/search/basic/:q/:page/', req => db.pages.searchBasic(req.params.q, offset(req)));
-
-GET('/pages/search/source/:q/', req => db.pages.searchSource(req.params.q));
-GET('/pages/search/source/:q/:page/', req => db.pages.searchSource(req.params.q, offset(req)));
+GET('/pages', req => db.pages.list(req.query));
+GET('/pages/:id', async req => {
+    const row = await db.pages.getById(req.params.id);
+    if (!row) {
+        const err = new Error('not found');
+        err.status = 404;
+        throw err;
+    }
+    return row;
+});
+GET('/channels', () => db.pages.channels());
+GET('/protocols', () => db.pages.protocols());
 
 const server = app.listen(port, '::', () => {
     console.log('Listening on port %s.', server.address().port);

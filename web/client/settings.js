@@ -1,6 +1,5 @@
 export const SETTINGS_DEFS = [
     { key: 'autoRefresh',     label: 'Auto Refresh',     default: false },
-    { key: 'fullTextSearch',  label: 'Full Text Search',  default: true  },
     { key: 'use24hTime',      label: '24 Hour Time',      default: false },
     { key: 'recipientColors', label: 'Recipient Colors',  default: true  },
 ];

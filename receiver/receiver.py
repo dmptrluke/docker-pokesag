@@ -20,6 +20,7 @@ import signal
 import subprocess
 import threading
 import time
+from datetime import UTC, datetime
 from pathlib import Path
 
 import osmosdr
@@ -180,45 +181,230 @@ class Database:
     # -- schema ------------------------------------------------------------
     def create_tables(self):
         with self._conn.cursor() as cur:
+            cur.execute('CREATE EXTENSION IF NOT EXISTS pg_trgm')
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS pages (
-                    rx_date   timestamp NOT NULL,
-                    source    text      NOT NULL,
-                    recipient text      NOT NULL,
-                    content   text      NOT NULL
+                    id            bigint       PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+                    rx_date       timestamptz  NOT NULL,
+                    channel       text         NOT NULL,
+                    protocol      text         NOT NULL,
+                    baud          integer,
+                    recipient     text         NOT NULL,
+                    content       text         NOT NULL,
+                    content_type  text,
+                    metadata      jsonb        NOT NULL DEFAULT '{}'
                 )
             """)
-            cur.execute("""
-                ALTER TABLE pages
-                ADD COLUMN IF NOT EXISTS id integer
-                GENERATED ALWAYS AS IDENTITY PRIMARY KEY
-            """)
-            cur.execute("""
-                ALTER TABLE pages
-                ADD COLUMN IF NOT EXISTS tsx tsvector
-                GENERATED ALWAYS AS (
-                    to_tsvector('simple', recipient || ' ' || content)
-                ) STORED
-            """)
-            cur.execute("""
-                CREATE INDEX IF NOT EXISTS search_idx ON pages USING GIN (tsx)
-            """)
+            cur.execute('CREATE INDEX IF NOT EXISTS pages_rx_date_desc_idx ON pages (rx_date DESC)')
+            cur.execute('CREATE INDEX IF NOT EXISTS pages_channel_idx      ON pages (channel,  rx_date DESC)')
+            cur.execute('CREATE INDEX IF NOT EXISTS pages_protocol_idx     ON pages (protocol, baud, rx_date DESC)')
+            cur.execute('CREATE INDEX IF NOT EXISTS pages_recipient_idx    ON pages (recipient, rx_date DESC)')
+            cur.execute('CREATE INDEX IF NOT EXISTS pages_content_trgm_idx ON pages USING GIN (content gin_trgm_ops)')
+            cur.execute('CREATE INDEX IF NOT EXISTS pages_metadata_idx ON pages USING GIN (metadata jsonb_path_ops)')
         log.info('Database tables ready.')
 
+    # -- migration ---------------------------------------------------------
+    def migrate_from_v1(self):
+        """One-shot migration from v1 schema (source string column) to v2.
+
+        Idempotent via gates on the presence of the legacy `source` column.
+        On fresh installs, create_tables emits v2 directly and every step
+        below no-ops because the `source` column never existed.
+        """
+        with self._conn.cursor() as cur:
+            cur.execute("""
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name='pages' AND column_name='source'
+            """)
+            if cur.fetchone() is None:
+                return
+            log.info('v1 schema detected - running migration to v2. This may take several minutes.')
+
+            # 1. pg_trgm extension (also done by create_tables, safe to repeat)
+            cur.execute('CREATE EXTENSION IF NOT EXISTS pg_trgm')
+
+            # 2. Add nullable structured columns
+            log.info('migration step 2: adding structured columns')
+            cur.execute('ALTER TABLE pages ADD COLUMN IF NOT EXISTS channel       text')
+            cur.execute('ALTER TABLE pages ADD COLUMN IF NOT EXISTS protocol      text')
+            cur.execute('ALTER TABLE pages ADD COLUMN IF NOT EXISTS baud          integer')
+            cur.execute('ALTER TABLE pages ADD COLUMN IF NOT EXISTS content_type  text')
+            cur.execute("ALTER TABLE pages ADD COLUMN IF NOT EXISTS metadata      jsonb NOT NULL DEFAULT '{}'")
+
+            # 2.5 Timezone sanity check before the one-way ALTER TYPE. Historical
+            #     rows are NZT-naive; if that's wrong, the latest row interpreted as
+            #     Pacific/Auckland wall-clock would land in the future relative to
+            #     real UTC now. Abort rather than corrupt data.
+            log.info('migration step 2.5: timezone sanity check')
+            cur.execute("""
+                SELECT
+                    (SELECT MAX(rx_date) FROM pages) AT TIME ZONE 'Pacific/Auckland'
+                        > NOW() + interval '5 minutes'
+            """)
+            result = cur.fetchone()
+            if result and result[0]:
+                raise RuntimeError(
+                    'rx_date sanity check failed: latest historical row interpreted '
+                    'as Pacific/Auckland wall-clock is in the future relative to NOW(). '
+                    'Timezone interpretation may be wrong, aborting migration.'
+                )
+
+            # 3. Convert rx_date from naive timestamp to timestamptz. Historical
+            #    rows in this deployment are NZT-naive; forks with different
+            #    history must change this tz literal.
+            log.info('migration step 3: converting rx_date to timestamptz (NZT-naive historical interpretation)')
+            cur.execute("""
+                DO $$
+                BEGIN
+                    IF EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name='pages' AND column_name='rx_date'
+                          AND data_type='timestamp without time zone'
+                    ) THEN
+                        ALTER TABLE pages
+                        ALTER COLUMN rx_date TYPE timestamptz
+                        USING rx_date AT TIME ZONE 'Pacific/Auckland';
+                    END IF;
+                END $$;
+            """)
+
+            # 4. Backfill structured columns from the old source string.
+            log.info('migration step 4: backfilling channel/protocol/baud from source strings')
+            # Pass 1: "Channel (POCSAG1200)" / "Channel (FLEX 1600)"
+            cur.execute(r"""
+                UPDATE pages SET
+                    channel  = regexp_replace(source, '\s+\((POCSAG|FLEX)\s*\d+\)$', ''),
+                    protocol = (regexp_match(source, '\((POCSAG|FLEX)\s*\d+\)$'))[1],
+                    baud     = NULLIF((regexp_match(source, '\((?:POCSAG|FLEX)\s*(\d+)\)$'))[1], '')::integer
+                WHERE channel IS NULL
+                  AND source ~ '\s+\((POCSAG|FLEX)\s*\d+\)$'
+            """)
+            # Pass 2: "Channel (FLEX)" - no baud, text-fallback path
+            cur.execute(r"""
+                UPDATE pages SET
+                    channel  = regexp_replace(source, '\s+\(FLEX\)$', ''),
+                    protocol = 'FLEX',
+                    baud     = NULL
+                WHERE channel IS NULL
+                  AND source ~ '\s+\(FLEX\)$'
+            """)
+            # Pass 3: lua-era bare channel names. Protocol is POCSAG (lua receiver
+            # was POCSAG-only); baud is pinned from v1.0.0 receiver.lua per channel.
+            cur.execute("""
+                UPDATE pages SET
+                    channel  = source,
+                    protocol = 'POCSAG',
+                    baud     = CASE source
+                        WHEN 'Spark 925'   THEN 1200
+                        WHEN 'Spark 950'   THEN 1200
+                        WHEN 'Telecom 925' THEN 1200
+                        WHEN 'Telecom 950' THEN 1200
+                        WHEN 'Ambulance'   THEN 512
+                    END
+                WHERE channel IS NULL
+                  AND source IN ('Spark 925', 'Spark 950', 'Telecom 925', 'Telecom 950', 'Ambulance')
+            """)
+            # Validation: any row still missing channel or protocol is a backfill bug.
+            cur.execute('SELECT count(*) FROM pages WHERE channel IS NULL OR protocol IS NULL')
+            unbackfilled = cur.fetchone()[0]
+            if unbackfilled > 0:
+                raise RuntimeError(
+                    f'migration step 4: {unbackfilled} rows could not be backfilled '
+                    'from source. Aborting - source-string shapes are not fully '
+                    'covered by the regex passes.'
+                )
+
+            # 5. Promote id from integer to bigint
+            log.info('migration step 5: promoting id to bigint')
+            cur.execute("""
+                DO $$
+                BEGIN
+                    IF EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name='pages' AND column_name='id' AND data_type='integer'
+                    ) THEN
+                        ALTER TABLE pages ALTER COLUMN id TYPE bigint;
+                    END IF;
+                END $$;
+            """)
+
+            # 6. Lock channel and protocol as NOT NULL
+            log.info('migration step 6: locking channel/protocol NOT NULL')
+            cur.execute("""
+                DO $$
+                BEGIN
+                    IF EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name='pages' AND column_name='channel' AND is_nullable='YES'
+                    ) AND NOT EXISTS (SELECT 1 FROM pages WHERE channel IS NULL) THEN
+                        ALTER TABLE pages ALTER COLUMN channel SET NOT NULL;
+                    END IF;
+
+                    IF EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name='pages' AND column_name='protocol' AND is_nullable='YES'
+                    ) AND NOT EXISTS (SELECT 1 FROM pages WHERE protocol IS NULL) THEN
+                        ALTER TABLE pages ALTER COLUMN protocol SET NOT NULL;
+                    END IF;
+                END $$;
+            """)
+
+            # 7. Drop legacy source column
+            log.info('migration step 7: dropping legacy source column')
+            cur.execute('ALTER TABLE pages DROP COLUMN IF EXISTS source')
+
+            # 8. Drop legacy tsx full-text column
+            log.info('migration step 8: dropping legacy tsx column and index')
+            cur.execute('DROP INDEX IF EXISTS pages_tsx_idx')
+            cur.execute('DROP INDEX IF EXISTS search_idx')
+            cur.execute('ALTER TABLE pages DROP COLUMN IF EXISTS tsx')
+
+            # 9. Create v2 indexes (also done by create_tables, safe to repeat)
+            log.info('migration step 9: creating v2 indexes')
+            cur.execute('CREATE INDEX IF NOT EXISTS pages_rx_date_desc_idx ON pages (rx_date DESC)')
+            cur.execute('CREATE INDEX IF NOT EXISTS pages_channel_idx      ON pages (channel,  rx_date DESC)')
+            cur.execute('CREATE INDEX IF NOT EXISTS pages_protocol_idx     ON pages (protocol, baud, rx_date DESC)')
+            cur.execute('CREATE INDEX IF NOT EXISTS pages_recipient_idx    ON pages (recipient, rx_date DESC)')
+            cur.execute('CREATE INDEX IF NOT EXISTS pages_content_trgm_idx ON pages USING GIN (content gin_trgm_ops)')
+            cur.execute('CREATE INDEX IF NOT EXISTS pages_metadata_idx ON pages USING GIN (metadata jsonb_path_ops)')
+
+        log.info('v1 -> v2 migration complete.')
+
     # -- insert ------------------------------------------------------------
-    def store_page(self, source: str, address: str, content: str):
-        if DISCARD_SPAM and _is_spam(content):
-            log.debug('Discarded spam from %s addr=%s', source, address)
-            return
+    def store_page(
+        self,
+        channel: str,
+        protocol: str,
+        baud: int | None,
+        recipient: str,
+        content: str,
+        content_type: str | None,
+        metadata: dict,
+        rx_date: datetime,
+    ):
+        if DISCARD_SPAM and _is_spam(content, content_type):
+            log.debug('Discarded spam from %s addr=%s', channel, recipient)
+            return 'spam'
         with self._lock:
             for attempt in range(2):
                 try:
                     with self._conn.cursor() as cur:
                         cur.execute(
-                            'INSERT INTO pages (rx_date, source, recipient, content) VALUES (NOW(), %s, %s, %s)',
-                            (source, str(address), content),
+                            """INSERT INTO pages
+                               (rx_date, channel, protocol, baud, recipient, content, content_type, metadata)
+                               VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
+                            (
+                                rx_date,
+                                channel,
+                                protocol,
+                                baud,
+                                recipient,
+                                content,
+                                content_type,
+                                json.dumps(metadata),
+                            ),
                         )
-                    return  # success
+                    return True
                 except Exception as exc:
                     if attempt == 0:
                         log.warning('DB insert error (will retry): %s', exc)
@@ -226,14 +412,15 @@ class Database:
                             self._reconnect()
                         except Exception as reconn_exc:
                             log.error('DB reconnect failed: %s', reconn_exc)
-                            return  # can't reconnect, drop page
+                            return False
                     else:
                         log.error('DB insert failed after retry: %s', exc)
+        return False
 
 
-def _is_spam(content: str) -> bool:
+def _is_spam(content: str, content_type: str | None) -> bool:
     t = content.lower().strip()
-    if len(t) < 4:
+    if content_type == 'alpha' and len(t) < 4:
         return True
     if 'ha/modica' in t or 'this is a test periodic' in t:
         return True
@@ -269,6 +456,17 @@ class MultimonChannel:
         self._reader = None
         self._err_reader = None
         self._pages_decoded = 0
+        self._pages_dropped = 0
+        self._pages_spam = 0
+
+    def _store(self, **kwargs):
+        result = self._db.store_page(**kwargs)
+        if result == 'spam':
+            self._pages_spam += 1
+        elif result:
+            self._pages_decoded += 1
+        else:
+            self._pages_dropped += 1
 
     def start(self):
         cmd = [
@@ -350,67 +548,131 @@ class MultimonChannel:
 
     def _handle_json(self, msg: dict):
         demod = msg.get('demod_name', '')
+        rx_date = datetime.now(UTC)
 
         # POCSAG
         if demod.startswith('POCSAG'):
-            address = str(msg.get('address', ''))
-            content = msg.get('alpha') or msg.get('numeric') or ''
-            content = _clean(content)
-            if content:
-                source = f'{self.name} ({demod})'
-                log.info('PAGE [%s] %s: %s', source, address, content)
-                self._db.store_page(source, address, content)
-                self._pages_decoded += 1
+            try:
+                baud = int(demod[len('POCSAG') :])
+            except ValueError:
+                baud = None
+            recipient = str(msg.get('address', ''))
+            alpha = msg.get('alpha')
+            numeric = msg.get('numeric')
+            content = _clean(alpha or numeric or '')
+            content_type = 'alpha' if alpha else ('numeric' if numeric else 'tone')
+
+            metadata = {
+                k: v for k, v in msg.items() if k not in {'demod_name', 'address', 'alpha', 'numeric', 'timestamp'}
+            }
+
+            if content or content_type == 'tone':
+                log.info('PAGE [%s P%s] %s: %s', self.name, baud, recipient, content or '(tone)')
+                self._store(
+                    channel=self.name,
+                    protocol='POCSAG',
+                    baud=baud,
+                    recipient=recipient,
+                    content=content,
+                    content_type=content_type,
+                    metadata=metadata,
+                    rx_date=rx_date,
+                )
             return
 
         # FLEX (flex_alphanumeric, flex_numeric, flex_tone_only)
         if demod.startswith('flex'):
-            capcode = str(msg.get('capcode', ''))
-            content = msg.get('message', '')
-            content = _clean(content)
-            if content:
-                baud = msg.get('sync_baud', '')
-                source = f'{self.name} (FLEX {baud})'
-                log.info('PAGE [%s] %s: %s', source, capcode, content)
-                self._db.store_page(source, capcode, content)
-                self._pages_decoded += 1
+            baud = int(msg.get('sync_baud') or 0) or None
+            recipient = str(msg.get('capcode', ''))
+            content = _clean(msg.get('message', '') or '')
+
+            if demod == 'flex_numeric':
+                content_type = 'numeric'
+            elif demod == 'flex_tone_only':
+                content_type = 'tone'
+            else:
+                content_type = 'alpha'
+
+            metadata = {
+                k: v for k, v in msg.items() if k not in {'demod_name', 'capcode', 'message', 'sync_baud', 'timestamp'}
+            }
+
+            if content or content_type == 'tone':
+                log.info('PAGE [%s F%s] %s: %s', self.name, baud, recipient, content or '(tone)')
+                self._store(
+                    channel=self.name,
+                    protocol='FLEX',
+                    baud=baud,
+                    recipient=recipient,
+                    content=content,
+                    content_type=content_type,
+                    metadata=metadata,
+                    rx_date=rx_date,
+                )
             return
 
     def _handle_text(self, line: str):
+        rx_date = datetime.now(UTC)
+
         # FLEX pipe-delimited: FLEX|ts|baud/…|cy.fr|capcode|TYPE|msg
         m = _RE_FLEX_PIPE.match(line)
         if m:
-            capcode, msg_type, content = m.group(1), m.group(2), m.group(3)
+            recipient, msg_type, content = m.group(1), m.group(2), m.group(3)
             content = _clean(content)
             if content and msg_type in ('ALN', 'NUM'):
-                source = f'{self.name} (FLEX)'
-                log.info('PAGE [%s] %s: %s', source, capcode, content)
-                self._db.store_page(source, capcode, content)
-                self._pages_decoded += 1
+                log.info('PAGE [%s F?] %s: %s', self.name, recipient, content)
+                self._store(
+                    channel=self.name,
+                    protocol='FLEX',
+                    baud=None,
+                    recipient=recipient,
+                    content=content,
+                    content_type='alpha' if msg_type == 'ALN' else 'numeric',
+                    metadata={},
+                    rx_date=rx_date,
+                )
             return
 
         # FLEX / FLEX_NEXT space-separated
         m = _RE_FLEX_SPACE.match(line)
         if m:
-            capcode, msg_type, content = m.group(1), m.group(2), m.group(3)
+            recipient, msg_type, content = m.group(1), m.group(2), m.group(3)
             content = _clean(content)
             if content and msg_type in ('ALN', 'NUM'):
-                source = f'{self.name} (FLEX)'
-                log.info('PAGE [%s] %s: %s', source, capcode, content)
-                self._db.store_page(source, capcode, content)
-                self._pages_decoded += 1
+                log.info('PAGE [%s F?] %s: %s', self.name, recipient, content)
+                self._store(
+                    channel=self.name,
+                    protocol='FLEX',
+                    baud=None,
+                    recipient=recipient,
+                    content=content,
+                    content_type='alpha' if msg_type == 'ALN' else 'numeric',
+                    metadata={},
+                    rx_date=rx_date,
+                )
             return
 
         # POCSAG text
         m = _RE_POCSAG.match(line)
         if m:
-            demod, address, content = m.group(1), m.group(2), m.group(3)
+            demod, recipient, content = m.group(1), m.group(2), m.group(3)
             content = _clean(content)
             if content:
-                source = f'{self.name} ({demod})'
-                log.info('PAGE [%s] %s: %s', source, address, content)
-                self._db.store_page(source, address, content)
-                self._pages_decoded += 1
+                try:
+                    baud = int(demod[len('POCSAG') :])
+                except ValueError:
+                    baud = None
+                log.info('PAGE [%s P%s] %s: %s', self.name, baud, recipient, content)
+                self._store(
+                    channel=self.name,
+                    protocol='POCSAG',
+                    baud=baud,
+                    recipient=recipient,
+                    content=content,
+                    content_type='alpha',
+                    metadata={},
+                    rx_date=rx_date,
+                )
             return
 
     @property
@@ -420,9 +682,11 @@ class MultimonChannel:
     def log_stats(self):
         """Log throughput stats."""
         log.info(
-            'MMNG [%s] %d pages decoded, pid=%s alive=%s',
+            'MMNG [%s] %d decoded, %d spam, %d db-failed, pid=%s alive=%s',
             self.name,
             self._pages_decoded,
+            self._pages_spam,
+            self._pages_dropped,
             self._proc.pid if self._proc else '?',
             self.alive,
         )
@@ -580,6 +844,7 @@ def main():
     if shutdown_event.is_set():
         return
     log.info('Connected to database.')
+    db.migrate_from_v1()
     db.create_tables()
 
     # ---- Start multimon-ng subprocesses ----
