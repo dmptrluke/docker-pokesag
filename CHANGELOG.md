@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.0.0 (2026-04-13)
 
 - Rebuild the settings modal on the native `<dialog>` element
 - Replace the custom settings toggle with a restyled checkbox
@@ -9,6 +9,8 @@
 - Drop the full-text search toggle; text search is a single trigram-accelerated substring match
 - Capture tone-only pages, previously dropped by the length-based spam filter
 - Log spam-filtered pages separately from database failures in receiver stats
+- Split `receiver.py` into focused modules under `receiver/src/`
+- Add `MMNG_DUMP_DIR` tap for capturing raw multimon-ng stdout
 
 ## 1.8.0 (2026-04-13)
 
