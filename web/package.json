@@ -15,14 +15,14 @@
         "compression": "^1.8.1",
         "express": "^5.2.1",
         "luxon": "^3.7.2",
-        "pg": "^8.21.0",
-        "pg-promise": "^12.6.2"
+        "pg": "^8.22.0",
+        "pg-promise": "^12.7.0"
     },
     "devDependencies": {
-        "@biomejs/biome": "2.4.15",
-        "esbuild": "^0.28.0",
-        "react": "^19.2.6",
+        "@biomejs/biome": "2.5.1",
+        "esbuild": "^0.28.1",
+        "react": "^19.2.7",
         "react-bootstrap-icons": "^1.11.6",
-        "react-dom": "^19.2.6"
+        "react-dom": "^19.2.7"
     }
 }
